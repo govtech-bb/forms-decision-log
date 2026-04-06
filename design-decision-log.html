@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Design Decision Log — alpha.gov.bb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --navy: #1a2855;
@@ -39,7 +42,7 @@
     --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
     --shadow-lg: 0 4px 20px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
     --transition: 0.18s ease;
-    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
   }
 
@@ -50,7 +53,7 @@
     background: var(--grey-100);
     color: var(--grey-900);
     min-height: 100vh;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.5;
   }
 
@@ -100,8 +103,9 @@
     gap: 10px;
   }
   .header-trident {
-    font-size: 28px;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
     color: var(--grey-900);
   }
   .header-title {
@@ -324,15 +328,30 @@
   .filter-chip:hover { border-color: var(--grey-400); background: var(--grey-200); }
   .filter-chip.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
 
-  .sidebar-footer {
-    margin-top: auto;
-    padding: 16px;
-    border-top: 1px solid var(--grey-200);
-    font-size: 11px;
-    color: var(--grey-500);
-    text-align: center;
-    line-height: 1.7;
+  .sidebar-collapsible-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    user-select: none;
   }
+  .sidebar-collapsible-header .sidebar-label { margin-bottom: 0; }
+  .sidebar-collapsible-header:hover .sidebar-label { color: var(--grey-700); }
+  .collapse-chevron {
+    color: var(--grey-500);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .collapse-chevron.rotated { transform: rotate(-90deg); }
+  .sidebar-collapsible-content {
+    overflow: hidden;
+    max-height: 400px;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+    opacity: 1;
+  }
+  .sidebar-collapsible-content.collapsed { max-height: 0; opacity: 0; }
 
   /* ── Main Content ── */
   .main-content {
@@ -879,7 +898,20 @@
   <header class="site-header">
     <div>
       <div class="header-brand">
-        <span class="header-trident">&#936;</span>
+        <span class="header-trident">
+          <svg width="22" height="32" viewBox="0 0 22 32" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+            <!-- Left tine -->
+            <rect x="0" y="0" width="3.5" height="14" rx="1.75"/>
+            <!-- Centre tine (tallest) -->
+            <rect x="9.25" y="0" width="3.5" height="18" rx="1.75"/>
+            <!-- Right tine -->
+            <rect x="18.5" y="0" width="3.5" height="14" rx="1.75"/>
+            <!-- Cross bar -->
+            <rect x="0" y="13" width="22" height="3.5" rx="1.75"/>
+            <!-- Shaft -->
+            <rect x="9.25" y="16.5" width="3.5" height="15.5" rx="1.75"/>
+          </svg>
+        </span>
         <span class="header-title">Government of Barbados</span>
       </div>
       <div class="header-page-label">GovTech Forms &mdash; Design decision log</div>
@@ -913,7 +945,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Dashboard
       </button>
-      <button class="nav-item" id="nav-all" onclick="showView('all'); filterByStatus(null)">
+      <button class="nav-item" id="nav-all" onclick="showAllDecisions()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         All Decisions
         <span class="nav-count" id="count-all">0</span>
@@ -921,43 +953,42 @@
     </div>
 
     <div class="sidebar-section">
-      <span class="sidebar-label">By Status</span>
-      <button class="nav-item" id="nav-proposed" onclick="showView('all'); filterByStatus('proposed')">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--blue);flex-shrink:0;display:inline-block"></span>
-        Proposed
-        <span class="nav-count" id="count-proposed">0</span>
-      </button>
-      <button class="nav-item" id="nav-accepted" onclick="showView('all'); filterByStatus('accepted')">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;display:inline-block"></span>
-        Accepted
-        <span class="nav-count" id="count-accepted">0</span>
-      </button>
-      <button class="nav-item" id="nav-rejected" onclick="showView('all'); filterByStatus('rejected')">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0;display:inline-block"></span>
-        Rejected
-        <span class="nav-count" id="count-rejected">0</span>
-      </button>
-      <button class="nav-item" id="nav-deprecated" onclick="showView('all'); filterByStatus('deprecated')">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0;display:inline-block"></span>
-        Deprecated
-        <span class="nav-count" id="count-deprecated">0</span>
-      </button>
-      <button class="nav-item" id="nav-superseded" onclick="showView('all'); filterByStatus('superseded')">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0;display:inline-block"></span>
-        Superseded
-        <span class="nav-count" id="count-superseded">0</span>
-      </button>
+      <div class="sidebar-collapsible-header" onclick="toggleSidebarSection('byStatus')">
+        <span class="sidebar-label">By Status</span>
+        <svg class="collapse-chevron" id="chevron-byStatus" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="sidebar-collapsible-content" id="collapse-byStatus">
+        <button class="nav-item" id="nav-proposed" onclick="showView('all'); filterByStatus('proposed')">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--blue);flex-shrink:0;display:inline-block"></span>
+          Proposed
+          <span class="nav-count" id="count-proposed">0</span>
+        </button>
+        <button class="nav-item" id="nav-accepted" onclick="showView('all'); filterByStatus('accepted')">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;display:inline-block"></span>
+          Accepted
+          <span class="nav-count" id="count-accepted">0</span>
+        </button>
+        <button class="nav-item" id="nav-rejected" onclick="showView('all'); filterByStatus('rejected')">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0;display:inline-block"></span>
+          Rejected
+          <span class="nav-count" id="count-rejected">0</span>
+        </button>
+        <button class="nav-item" id="nav-deprecated" onclick="showView('all'); filterByStatus('deprecated')">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0;display:inline-block"></span>
+          Deprecated
+          <span class="nav-count" id="count-deprecated">0</span>
+        </button>
+        <button class="nav-item" id="nav-superseded" onclick="showView('all'); filterByStatus('superseded')">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0;display:inline-block"></span>
+          Superseded
+          <span class="nav-count" id="count-superseded">0</span>
+        </button>
+      </div>
     </div>
 
     <div class="sidebar-section">
       <span class="sidebar-label">By Category</span>
       <div class="filter-group" id="categoryFilters"></div>
-    </div>
-
-    <div class="sidebar-footer">
-      alpha.gov.bb · Design System<br>
-      Government of Barbados<br>
-      <span id="footerCount">0 decisions logged</span>
     </div>
   </aside>
 
@@ -1336,6 +1367,18 @@ function showView(name) {
   if (name === 'all') applyFilters();
 }
 
+function toggleSidebarSection(id) {
+  document.getElementById('collapse-' + id).classList.toggle('collapsed');
+  document.getElementById('chevron-' + id).classList.toggle('rotated');
+}
+
+function showAllDecisions() {
+  activeStatusFilter = null;
+  activeCategoryFilter = null;
+  updateSidebar();
+  showView('all');
+}
+
 function goBack() {
   showView(currentView === 'detail' ? 'all' : currentView);
   if (activeStatusFilter) filterByStatus(activeStatusFilter);
@@ -1347,7 +1390,6 @@ function goBack() {
 function updateSidebar() {
   const total = decisions.length;
   document.getElementById('count-all').textContent = total;
-  document.getElementById('footerCount').textContent = total + ' decision' + (total !== 1 ? 's' : '') + ' logged';
   ['proposed','accepted','rejected','deprecated','superseded'].forEach(s => {
     document.getElementById('count-' + s).textContent = decisions.filter(d => d.status === s).length;
   });
@@ -1390,7 +1432,7 @@ function renderDashboard() {
     { key: 'deprecated', label: 'Deprecated' },
     { key: 'superseded', label: 'Superseded' }
   ].map(({ key, label }) => `
-    <div class="stat-card ${key}" onclick="${key === 'all' ? "showView('all');filterByStatus(null)" : "showView('all');filterByStatus('" + key + "')"}">
+    <div class="stat-card ${key}" onclick="${key === 'all' ? "showAllDecisions()" : "showView('all');filterByStatus('" + key + "')"}">
       <div class="stat-num">${counts[key]}</div>
       <div class="stat-label">${label}</div>
     </div>`).join('');
@@ -1848,29 +1890,49 @@ renderDashboard();
       <a class="footer-link" href="#">Careers</a>
     </div>
     <div class="footer-brand">
-      <!-- Barbados coat of arms (simplified SVG) -->
-      <svg class="footer-crest" width="64" height="80" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Barbados coat of arms">
-        <!-- Pelican on top -->
-        <ellipse cx="32" cy="9" rx="6" ry="5" fill="#c89c2a"/>
-        <ellipse cx="32" cy="6" rx="3" ry="3" fill="#c89c2a"/>
-        <path d="M29 9 Q32 13 35 9" fill="#c89c2a"/>
-        <!-- Shield body -->
-        <path d="M8 18 H56 V52 Q56 70 32 76 Q8 70 8 52 Z" fill="#1a2855" stroke="#c89c2a" stroke-width="1.5"/>
+      <!-- Barbados coat of arms -->
+      <svg class="footer-crest" width="72" height="90" viewBox="0 0 72 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Barbados coat of arms">
+        <!-- Pelican crest on top -->
+        <ellipse cx="36" cy="7" rx="5" ry="4" fill="#c89c2a"/>
+        <ellipse cx="36" cy="4" rx="3" ry="3" fill="#d4a832"/>
+        <path d="M32 7 Q36 12 40 7" fill="#c89c2a"/>
+        <!-- Crest base / helmet suggestion -->
+        <rect x="32" y="10" width="8" height="3" rx="1.5" fill="#c89c2a" opacity="0.6"/>
+        <!-- Shield outline -->
+        <path d="M10 14 H62 V50 Q62 72 36 80 Q10 72 10 50 Z" fill="#1a2855" stroke="#c89c2a" stroke-width="2"/>
+        <!-- Shield inner highlight -->
+        <path d="M14 17 H58 V50 Q58 69 36 77 Q14 69 14 50 Z" fill="#1e3270"/>
         <!-- Gold vertical divider -->
-        <rect x="30" y="18" width="4" height="58" fill="#c89c2a" opacity="0.5"/>
-        <!-- Left panel: fig tree (simplified) -->
-        <circle cx="19" cy="36" r="7" fill="#2d7d78" opacity="0.8"/>
-        <rect x="18" y="42" width="2" height="8" fill="#c89c2a" opacity="0.7"/>
-        <!-- Right panel: sugar cane stalks -->
-        <rect x="42" y="28" width="2" height="22" fill="#c89c2a" opacity="0.8"/>
-        <rect x="46" y="28" width="2" height="22" fill="#c89c2a" opacity="0.8"/>
-        <path d="M40 28 Q42 24 44 28" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.8"/>
-        <path d="M44 28 Q46 24 48 28" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.8"/>
-        <!-- Trident in centre -->
-        <text x="32" y="58" text-anchor="middle" fill="#c89c2a" font-size="14" font-weight="bold" opacity="0.9">&#936;</text>
+        <rect x="33.5" y="14" width="5" height="66" fill="#c89c2a" opacity="0.55"/>
+        <!-- Gold horizontal divider (upper third) -->
+        <rect x="10" y="37" width="52" height="3.5" fill="#c89c2a" opacity="0.45"/>
+        <!-- LEFT UPPER: bearded fig tree -->
+        <rect x="21" y="20" width="3" height="14" rx="1.5" fill="#c89c2a" opacity="0.7"/>
+        <ellipse cx="22" cy="19" rx="7" ry="6" fill="#2d7d78" opacity="0.85"/>
+        <ellipse cx="19" cy="22" rx="4" ry="3" fill="#2d7d78" opacity="0.7"/>
+        <ellipse cx="25" cy="22" rx="4" ry="3" fill="#2d7d78" opacity="0.7"/>
+        <!-- RIGHT UPPER: sugar cane -->
+        <rect x="47" y="18" width="2.5" height="16" rx="1.25" fill="#c89c2a" opacity="0.8"/>
+        <rect x="52" y="18" width="2.5" height="16" rx="1.25" fill="#c89c2a" opacity="0.8"/>
+        <path d="M45 18 Q48 13 51 18" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.8"/>
+        <path d="M50 18 Q53 13 56 18" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.8"/>
+        <!-- LEFT LOWER: pelican bird (simplified) -->
+        <ellipse cx="22" cy="57" rx="5" ry="4" fill="#c89c2a" opacity="0.75"/>
+        <ellipse cx="22" cy="52" rx="3" ry="3.5" fill="#c89c2a" opacity="0.75"/>
+        <path d="M20 52 Q17 50 19 48" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.75"/>
+        <!-- RIGHT LOWER: dolphin (simplified arc) -->
+        <path d="M43 60 Q50 50 56 55 Q52 62 44 65 Z" fill="#c89c2a" opacity="0.65"/>
+        <circle cx="44" cy="61" r="2" fill="#1a2855" opacity="0.5"/>
+        <!-- Centre trident -->
+        <rect x="29" y="42" width="3" height="14" rx="1.5" fill="#c89c2a"/>
+        <rect x="34.5" y="38" width="3" height="18" rx="1.5" fill="#c89c2a"/>
+        <rect x="40" y="42" width="3" height="14" rx="1.5" fill="#c89c2a"/>
+        <rect x="29" y="53" width="14" height="3" rx="1.5" fill="#c89c2a"/>
+        <rect x="34.5" y="56" width="3" height="6" rx="1.5" fill="#c89c2a"/>
         <!-- Motto scroll -->
-        <rect x="10" y="72" width="44" height="7" rx="2" fill="#c89c2a" opacity="0.25"/>
-        <text x="32" y="77.5" text-anchor="middle" fill="#fff" font-size="5.5" letter-spacing="0.5" opacity="0.8">PRIDE AND INDUSTRY</text>
+        <rect x="8" y="82" width="56" height="8" rx="2" fill="#c89c2a" opacity="0.3"/>
+        <rect x="10" y="83" width="52" height="6" rx="1.5" fill="none" stroke="#c89c2a" stroke-width="0.75" opacity="0.5"/>
+        <text x="36" y="88" text-anchor="middle" fill="#fff" font-size="5" font-family="sans-serif" letter-spacing="0.6" opacity="0.9">PRIDE AND INDUSTRY</text>
       </svg>
       <div class="footer-copyright">&copy; 2026 Government of Barbados</div>
     </div>
