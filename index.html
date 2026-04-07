@@ -1,1942 +1,506 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Design Decision Log — alpha.gov.bb</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --navy: #1a2855;
-    --navy-light: #243166;
-    --teal: #2d7d78;
-    --teal-light: #1e6b69;
-    --teal-pale: #e2f0ef;
-    --gov-yellow: #f5b82e;
-    --gov-yellow-dark: #d9a01e;
-    --gold: #c89c2a;
-    --gold-light: #f5e9c2;
-    --white: #ffffff;
-    --grey-50: #f8f9fa;
-    --grey-100: #f0f2f5;
-    --grey-200: #e2e6ea;
-    --grey-300: #ced4da;
-    --grey-500: #8a94a0;
-    --grey-700: #495057;
-    --grey-900: #0b0c0c;
-    --red: #c0392b;
-    --red-pale: #fdf0ef;
-    --green: #1a7a4a;
-    --green-pale: #e8f5ee;
-    --amber: #b45309;
-    --amber-pale: #fef3e2;
-    --blue: #1e5fa8;
-    --blue-pale: #e8f0fb;
-    --purple: #5b3fa8;
-    --purple-pale: #ede8fb;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form decision log — GovTech Barbados</title>
 
-    --radius: 4px;
-    --radius-lg: 6px;
-    --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
-    --shadow-lg: 0 4px 20px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
-    --transition: 0.18s ease;
-    --font: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  }
+  <!-- Figtree (official alpha.gov.bb font) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&display=swap" rel="stylesheet">
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <!-- Tailwind CDN — config must be assigned to tailwind.config (not tailwindcss.config) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bb-yellow-00':   '#e8a833',
+            'bb-yellow-100':  '#ffc726',
+            'bb-yellow-40':   '#ffe9a8',
+            'bb-yellow-10':   '#fff9e9',
+            'bb-blue-00':     '#00164a',
+            'bb-blue-100':    '#00267f',
+            'bb-blue-40':     '#99a8cc',
+            'bb-blue-10':     '#e5e9f2',
+            'bb-black-00':    '#000000',
+            'bb-mid-grey-00': '#595959',
+            'bb-grey-00':     '#e0e4e9',
+            'bb-white-00':    '#ffffff',
+            'bb-green-00':    '#00654a',
+            'bb-green-100':   '#1fbf84',
+            'bb-green-40':    '#a5e5ce',
+            'bb-green-10':    '#e9f9f3',
+            'bb-red-00':      '#a42c2c',
+            'bb-red-100':     '#ff6b6b',
+            'bb-red-40':      '#ffc4c4',
+            'bb-red-10':      '#fff0f0',
+            'bb-teal-00':     '#0e5f64',
+            'bb-teal-100':    '#30c0c8',
+            'bb-teal-40':     '#ace6e9',
+            'bb-teal-10':     '#eaf9f9',
+            'bb-purple-00':   '#4a235a',
+            'bb-purple-100':  '#a962c7',
+            'bb-pink-00':     '#ad1157',
+            'bb-pink-100':    '#ff94d9',
+          },
+          fontFamily: {
+            sans: ['Figtree', '-apple-system', 'system-ui', '"Segoe UI"', 'Roboto', 'sans-serif'],
+          },
+          spacing: {
+            'xs': '0.5rem',
+            's':  '1rem',
+            'xm': '1.5rem',
+            'm':  '2rem',
+            'l':  '4rem',
+            'xl': '8rem',
+          },
+          borderRadius: {
+            'sm': '0.25rem',
+            'md': '0.375rem',
+            'lg': '0.5rem',
+          },
+          boxShadow: {
+            'form-hover': 'inset 4px 4px 0px 0px rgba(0,0,0,0.1)',
+          },
+        },
+      },
+    }
+  </script>
 
-  body {
-    font-family: var(--font);
-    background: var(--grey-100);
-    color: var(--grey-900);
-    min-height: 100vh;
-    font-size: 16px;
-    line-height: 1.5;
-  }
+  <style>
+    body { font-family: Figtree, -apple-system, "system-ui", "Segoe UI", Roboto, sans-serif; }
 
-  /* ── Gov top banners + header ── */
-  .sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .gov-banner {
-    background: var(--navy);
-    color: var(--white);
-    font-size: 13px;
-    padding: 8px 32px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    letter-spacing: 0.01em;
-  }
-  .gov-banner-icon {
-    font-size: 15px;
-    line-height: 1;
-  }
-  .alpha-banner {
-    background: #e8eaef;
-    color: var(--grey-900);
-    font-size: 13px;
-    padding: 7px 32px;
-    border-bottom: 1px solid #c8cad0;
-  }
-  .alpha-banner a {
-    color: var(--teal);
-    font-weight: 600;
-    text-underline-offset: 3px;
-  }
-  .site-header {
-    background: var(--gov-yellow);
-    padding: 14px 32px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    box-shadow: 0 2px 0 rgba(0,0,0,0.08);
-  }
-  .header-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .header-trident {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    color: var(--grey-900);
-  }
-  .header-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--grey-900);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-  }
-  .header-page-label {
-    font-size: 13px;
-    color: var(--grey-900);
-    opacity: 0.75;
-    margin-top: 3px;
-    font-weight: 400;
-  }
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-bottom: 2px;
-  }
-  .btn-header {
-    background: var(--teal);
-    color: var(--white);
-    border: 2px solid var(--teal);
-  }
-  .btn-header:hover { background: var(--teal-light); border-color: var(--teal-light); }
-  .btn-outline-header {
-    background: transparent;
-    color: var(--grey-900);
-    border: 2px solid var(--grey-900);
-  }
-  .btn-outline-header:hover { background: rgba(0,0,0,0.06); }
+    /* ── Badge colours (category) ── */
+    .badge-email       { background:#E0F2F1; color:#004D49; }
+    .badge-field       { background:#E8EBF8; color:#00267f; }
+    .badge-validation  { background:#F3EDF8; color:#4a235a; }
+    .badge-structure   { background:#FEF3E2; color:#B45309; }
+    .badge-conditional { background:#FEF2F2; color:#9B1C1C; }
 
-  /* ── Footer ── */
-  .site-footer {
-    background: var(--navy);
-    color: var(--white);
-    padding: 32px 32px 24px;
-    margin-top: 40px;
-  }
-  .footer-inner {
-    max-width: 1200px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 32px;
-  }
-  .footer-links {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .footer-link {
-    color: rgba(255,255,255,0.85);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    font-size: 14px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    font-family: var(--font);
-    padding: 0;
-    text-align: left;
-  }
-  .footer-link:hover { color: var(--white); }
-  .footer-brand {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
-  }
-  .footer-copyright {
-    font-size: 13px;
-    color: rgba(255,255,255,0.75);
-    text-align: right;
-  }
-  .footer-crest {
-    display: block;
-  }
+    /* ── Badge colours (status) ── */
+    .badge-active     { background:#e9f9f3; color:#00654a; }
+    .badge-review     { background:#FEF3E2; color:#92400E; }
+    .badge-superseded { background:#F3F4F6; color:#6B7280; }
 
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: var(--radius);
-    border: none;
-    cursor: pointer;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 500;
-    transition: background var(--transition), opacity var(--transition), transform var(--transition);
-    text-decoration: none;
-    white-space: nowrap;
-    line-height: 1.4;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-primary { background: var(--teal); color: var(--white); }
-  .btn-primary:hover { background: var(--teal-light); }
-  .btn-secondary { background: rgba(255,255,255,0.12); color: var(--white); border: 1px solid rgba(255,255,255,0.2); }
-  .btn-secondary:hover { background: rgba(255,255,255,0.2); }
-  .btn-ghost { background: transparent; color: var(--grey-700); border: 1px solid var(--grey-300); }
-  .btn-ghost:hover { background: var(--grey-100); border-color: var(--grey-500); }
-  .btn-danger { background: var(--red); color: var(--white); }
-  .btn-danger:hover { background: #a93226; }
-  .btn-sm { padding: 4px 10px; font-size: 12px; }
-  .btn-icon { padding: 7px; }
-  .btn-icon svg { display: block; }
+    /* ── Email table cell status ── */
+    .cell-required    { color:#0e5f64; font-weight:600; display:flex; align-items:flex-start; gap:5px; }
+    .cell-excluded    { color:#a42c2c; font-weight:600; display:flex; align-items:flex-start; gap:5px; }
+    .cell-conditional { color:#D97706; font-weight:600; display:flex; align-items:flex-start; gap:5px; }
+    .cell-note        { display:block; font-style:italic; font-weight:400; color:#595959; margin-top:2px; font-size:0.8rem; }
 
-  /* ── Layout ── */
-  .app-layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    min-height: calc(100vh - 144px);
-  }
+    /* ── Collapsible card ── */
+    .decision-body { display:none; }
+    .decision-card.open .decision-body { display:block; }
+    .decision-card.open { border-left:4px solid #00267f !important; }
 
-  /* ── Sidebar ── */
-  .sidebar {
-    background: var(--white);
-    border-right: 1px solid var(--grey-200);
-    padding: 20px 0;
-    position: sticky;
-    top: 144px;
-    height: calc(100vh - 144px);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  .sidebar-section {
-    padding: 0 16px;
-    margin-bottom: 20px;
-  }
-  .sidebar-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--grey-500);
-    padding: 0 8px;
-    margin-bottom: 6px;
-    display: block;
-  }
-  .sidebar-search {
-    position: relative;
-    margin: 0 16px 16px;
-  }
-  .sidebar-search input {
-    width: 100%;
-    padding: 8px 10px 8px 32px;
-    border: 1px solid var(--grey-300);
-    border-radius: var(--radius);
-    font-family: var(--font);
-    font-size: 13px;
-    background: var(--grey-50);
-    color: var(--grey-900);
-    transition: border-color var(--transition), background var(--transition);
-    outline: none;
-  }
-  .sidebar-search input:focus {
-    border-color: var(--teal);
-    background: var(--white);
-    box-shadow: 0 0 0 3px rgba(0,122,110,0.12);
-  }
-  .sidebar-search svg {
-    position: absolute;
-    left: 9px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--grey-500);
-    pointer-events: none;
-  }
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 8px 16px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--grey-700);
-    transition: background var(--transition), color var(--transition);
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-    font-family: var(--font);
-  }
-  .nav-item:hover { background: var(--grey-100); color: var(--grey-900); }
-  .nav-item.active { background: var(--teal-pale); color: var(--teal); font-weight: 600; }
-  .nav-item .nav-count {
-    margin-left: auto;
-    font-size: 11px;
-    background: var(--grey-200);
-    color: var(--grey-700);
-    padding: 1px 7px;
-    border-radius: 20px;
-    font-weight: 600;
-  }
-  .nav-item.active .nav-count { background: var(--teal); color: var(--white); }
+    .chevron { transition: transform 0.2s; }
+    .decision-card.open .chevron { transform: rotate(90deg); }
 
-  .filter-group { padding: 0 8px; }
-  .filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1.5px solid transparent;
-    transition: all var(--transition);
-    margin: 2px;
-    background: var(--grey-100);
-    color: var(--grey-700);
-  }
-  .filter-chip:hover { border-color: var(--grey-400); background: var(--grey-200); }
-  .filter-chip.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
-
-  .sidebar-collapsible-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 8px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .sidebar-collapsible-header .sidebar-label { margin-bottom: 0; }
-  .sidebar-collapsible-header:hover .sidebar-label { color: var(--grey-700); }
-  .collapse-chevron {
-    color: var(--grey-500);
-    transition: transform 0.2s ease;
-    flex-shrink: 0;
-  }
-  .collapse-chevron.rotated { transform: rotate(-90deg); }
-  .sidebar-collapsible-content {
-    overflow: hidden;
-    max-height: 400px;
-    transition: max-height 0.25s ease, opacity 0.2s ease;
-    opacity: 1;
-  }
-  .sidebar-collapsible-content.collapsed { max-height: 0; opacity: 0; }
-
-  /* ── Main Content ── */
-  .main-content {
-    padding: 24px;
-    min-width: 0;
-  }
-
-  /* ── Views ── */
-  .view { display: none; }
-  .view.active { display: block; }
-
-  /* ── Dashboard ── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-    box-shadow: var(--shadow);
-    border-top: 3px solid transparent;
-    cursor: pointer;
-    transition: transform var(--transition), box-shadow var(--transition);
-  }
-  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-  .stat-card.all { border-top-color: var(--navy); }
-  .stat-card.accepted { border-top-color: var(--green); }
-  .stat-card.proposed { border-top-color: var(--blue); }
-  .stat-card.rejected { border-top-color: var(--red); }
-  .stat-card.deprecated { border-top-color: var(--amber); }
-  .stat-card.superseded { border-top-color: var(--purple); }
-  .stat-num {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .stat-card.all .stat-num { color: var(--navy); }
-  .stat-card.accepted .stat-num { color: var(--green); }
-  .stat-card.proposed .stat-num { color: var(--blue); }
-  .stat-card.rejected .stat-num { color: var(--red); }
-  .stat-card.deprecated .stat-num { color: var(--amber); }
-  .stat-card.superseded .stat-num { color: var(--purple); }
-  .stat-label { font-size: 12px; color: var(--grey-500); font-weight: 500; }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-  .section-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--grey-900);
-  }
-  .section-title small {
-    font-weight: 400;
-    color: var(--grey-500);
-    font-size: 12px;
-    margin-left: 6px;
-  }
-
-  /* ── Decision Cards (list) ── */
-  .decisions-list { display: flex; flex-direction: column; gap: 10px; }
-
-  .decision-card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 16px 18px;
-    box-shadow: var(--shadow);
-    cursor: pointer;
-    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
-    border: 1px solid var(--grey-200);
-    border-left: 4px solid transparent;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    align-items: start;
-  }
-  .decision-card:hover { transform: translateX(2px); box-shadow: var(--shadow-lg); border-color: var(--grey-300); }
-  .decision-card.status-accepted { border-left-color: var(--green); }
-  .decision-card.status-proposed { border-left-color: var(--blue); }
-  .decision-card.status-rejected { border-left-color: var(--red); }
-  .decision-card.status-deprecated { border-left-color: var(--amber); }
-  .decision-card.status-superseded { border-left-color: var(--purple); }
-
-  .card-id {
-    font-size: 11px;
-    font-family: var(--font-mono);
-    color: var(--grey-500);
-    font-weight: 500;
-    margin-bottom: 3px;
-  }
-  .card-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--grey-900);
-    margin-bottom: 5px;
-    line-height: 1.35;
-  }
-  .card-context {
-    font-size: 12px;
-    color: var(--grey-700);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .card-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-  }
-  .card-actions { display: flex; gap: 4px; flex-shrink: 0; }
-
-  /* ── Badges / Tags ── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    flex-shrink: 0;
-  }
-  .badge-accepted { background: var(--green-pale); color: var(--green); }
-  .badge-proposed { background: var(--blue-pale); color: var(--blue); }
-  .badge-rejected { background: var(--red-pale); color: var(--red); }
-  .badge-deprecated { background: var(--amber-pale); color: var(--amber); }
-  .badge-superseded { background: var(--purple-pale); color: var(--purple); }
-  .badge-category { background: var(--grey-100); color: var(--grey-700); font-weight: 500; }
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 7px;
-    background: var(--navy);
-    color: rgba(255,255,255,0.85);
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-  }
-
-  /* ── Detail View ── */
-  .detail-header {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow);
-    border-left: 5px solid var(--teal);
-  }
-  .detail-header.status-accepted { border-left-color: var(--green); }
-  .detail-header.status-proposed { border-left-color: var(--blue); }
-  .detail-header.status-rejected { border-left-color: var(--red); }
-  .detail-header.status-deprecated { border-left-color: var(--amber); }
-  .detail-header.status-superseded { border-left-color: var(--purple); }
-  .detail-id {
-    font-size: 12px;
-    font-family: var(--font-mono);
-    color: var(--grey-500);
-    margin-bottom: 6px;
-  }
-  .detail-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--grey-900);
-    margin-bottom: 12px;
-    line-height: 1.25;
-  }
-  .detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  .meta-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: var(--grey-500);
-  }
-  .meta-item strong { color: var(--grey-700); }
-
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-  .detail-block {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 18px;
-    box-shadow: var(--shadow);
-  }
-  .detail-block.full { grid-column: 1 / -1; }
-  .detail-block-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--grey-500);
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .detail-block-content {
-    font-size: 13px;
-    color: var(--grey-700);
-    line-height: 1.7;
-    white-space: pre-wrap;
-  }
-  .detail-actions {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    align-items: center;
-  }
-  .detail-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--teal);
-    cursor: pointer;
-    background: none;
-    border: none;
-    font-family: var(--font);
-    padding: 0;
-    font-weight: 500;
-  }
-  .detail-back:hover { text-decoration: underline; }
-
-  /* ── Form / Modal ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 20, 40, 0.55);
-    backdrop-filter: blur(3px);
-    z-index: 200;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 32px 16px;
-    overflow-y: auto;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  .modal-overlay.open {
-    opacity: 1;
-    pointer-events: all;
-  }
-  .modal {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    width: 100%;
-    max-width: 720px;
-    transform: translateY(-12px);
-    transition: transform 0.2s ease;
-    flex-shrink: 0;
-  }
-  .modal-overlay.open .modal { transform: translateY(0); }
-  .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--grey-200);
-  }
-  .modal-title { font-size: 16px; font-weight: 700; color: var(--grey-900); }
-  .modal-body { padding: 24px; }
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--grey-200);
-    background: var(--grey-50);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .form-row.full { grid-template-columns: 1fr; }
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--grey-700);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .form-label .required { color: var(--red); }
-  .form-control {
-    padding: 8px 11px;
-    border: 1px solid var(--grey-300);
-    border-radius: var(--radius);
-    font-family: var(--font);
-    font-size: 13px;
-    color: var(--grey-900);
-    background: var(--white);
-    transition: border-color var(--transition), box-shadow var(--transition);
-    outline: none;
-    width: 100%;
-  }
-  .form-control:focus {
-    border-color: var(--teal);
-    box-shadow: 0 0 0 3px rgba(0,122,110,0.12);
-  }
-  textarea.form-control {
-    resize: vertical;
-    min-height: 80px;
-    line-height: 1.6;
-  }
-  select.form-control { cursor: pointer; appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a94a0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 30px;
-  }
-  .form-hint { font-size: 11px; color: var(--grey-500); }
-  .char-count { font-size: 11px; color: var(--grey-500); text-align: right; }
-
-  /* ── Toast ── */
-  .toast-container {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .toast {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-radius: var(--radius);
-    background: var(--grey-900);
-    color: var(--white);
-    font-size: 13px;
-    font-weight: 500;
-    box-shadow: var(--shadow-lg);
-    animation: toast-in 0.25s ease forwards;
-    max-width: 320px;
-  }
-  .toast.success { background: var(--green); }
-  .toast.error { background: var(--red); }
-  .toast.info { background: var(--navy); }
-  @keyframes toast-in {
-    from { opacity: 0; transform: translateX(16px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  /* ── Empty State ── */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--grey-500);
-  }
-  .empty-state svg { margin: 0 auto 16px; opacity: 0.35; display: block; }
-  .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--grey-700); margin-bottom: 6px; }
-  .empty-state p { font-size: 13px; }
-
-  /* ── Toolbar ── */
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-  .toolbar-search {
-    position: relative;
-    flex: 1;
-    min-width: 200px;
-  }
-  .toolbar-search input {
-    width: 100%;
-    padding: 8px 11px 8px 34px;
-    border: 1px solid var(--grey-300);
-    border-radius: var(--radius);
-    font-family: var(--font);
-    font-size: 13px;
-    background: var(--white);
-    outline: none;
-    transition: border-color var(--transition), box-shadow var(--transition);
-  }
-  .toolbar-search input:focus {
-    border-color: var(--teal);
-    box-shadow: 0 0 0 3px rgba(0,122,110,0.12);
-  }
-  .toolbar-search svg {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--grey-500);
-    pointer-events: none;
-  }
-  .sort-select {
-    padding: 8px 30px 8px 10px;
-    border: 1px solid var(--grey-300);
-    border-radius: var(--radius);
-    font-family: var(--font);
-    font-size: 13px;
-    background: var(--white);
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a94a0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    outline: none;
-    cursor: pointer;
-    color: var(--grey-900);
-  }
-
-  /* ── Export menu ── */
-  .dropdown { position: relative; display: inline-flex; }
-  .dropdown-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    background: var(--white);
-    border: 1px solid var(--grey-200);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
-    min-width: 160px;
-    z-index: 150;
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-4px);
-    transition: opacity 0.15s, transform 0.15s;
-  }
-  .dropdown.open .dropdown-menu { opacity: 1; pointer-events: all; transform: translateY(0); }
-  .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 14px;
-    font-size: 13px;
-    color: var(--grey-700);
-    cursor: pointer;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-    font-family: var(--font);
-    transition: background var(--transition);
-  }
-  .dropdown-item:hover { background: var(--grey-100); color: var(--grey-900); }
-
-  /* ── Timeline (dashboard) ── */
-  .timeline { display: flex; flex-direction: column; gap: 0; }
-  .timeline-item {
-    display: flex;
-    gap: 14px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--grey-100);
-    cursor: pointer;
-    transition: background var(--transition);
-    border-radius: var(--radius);
-    padding: 10px;
-  }
-  .timeline-item:hover { background: var(--grey-50); }
-  .timeline-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-top: 4px;
-    flex-shrink: 0;
-  }
-  .timeline-item .card-title { font-size: 13px; margin-bottom: 2px; }
-  .timeline-date { font-size: 11px; color: var(--grey-500); }
-
-  /* ── Confirm dialog ── */
-  .confirm-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10,20,40,0.5);
-    backdrop-filter: blur(2px);
-    z-index: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s;
-  }
-  .confirm-overlay.open { opacity: 1; pointer-events: all; }
-  .confirm-box {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 28px 28px 20px;
-    max-width: 380px;
-    width: 90%;
-    box-shadow: var(--shadow-lg);
-    transform: scale(0.96);
-    transition: transform 0.15s;
-  }
-  .confirm-overlay.open .confirm-box { transform: scale(1); }
-  .confirm-icon { font-size: 28px; margin-bottom: 10px; }
-  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-  .confirm-text { font-size: 13px; color: var(--grey-700); margin-bottom: 20px; line-height: 1.6; }
-  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
-
-  /* ── Misc ── */
-  .divider { height: 1px; background: var(--grey-200); margin: 20px 0; }
-  .text-muted { color: var(--grey-500); }
-  .fw-600 { font-weight: 600; }
-  .no-results { text-align: center; padding: 40px; color: var(--grey-500); font-size: 13px; }
-  .highlight { background: #fff59d; border-radius: 2px; }
-
-  @media (max-width: 768px) {
-    .app-layout { grid-template-columns: 1fr; }
-    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--grey-200); }
-    .detail-grid { grid-template-columns: 1fr; }
-    .form-row { grid-template-columns: 1fr; }
-  }
-</style>
+    /* ── Filter active ── */
+    .filter-btn.active { background:#00267f; color:#fff; border-color:#00267f; }
+  </style>
 </head>
-<body>
+<body style="font-family:Figtree,-apple-system,system-ui,'Segoe UI',Roboto,sans-serif; font-size:1rem; line-height:1.5; color:#000; background:#fff; min-height:100vh; display:flex; flex-direction:column; margin:0;">
 
-<!-- Sticky header wrapper -->
-<div class="sticky-header">
-  <!-- Official gov banner -->
-  <div class="gov-banner">
-    <span class="gov-banner-icon">🏛️</span> Official government website
-  </div>
-  <!-- Alpha phase banner -->
-  <div class="alpha-banner">
-    This page is in <a href="#">Alpha</a>.
-  </div>
-  <!-- Main site header -->
-  <header class="site-header">
-    <div>
-      <div class="header-brand">
-        <span class="header-trident">
-          <svg width="22" height="32" viewBox="0 0 22 32" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-            <!-- Left tine -->
-            <rect x="0" y="0" width="3.5" height="14" rx="1.75"/>
-            <!-- Centre tine (tallest) -->
-            <rect x="9.25" y="0" width="3.5" height="18" rx="1.75"/>
-            <!-- Right tine -->
-            <rect x="18.5" y="0" width="3.5" height="14" rx="1.75"/>
-            <!-- Cross bar -->
-            <rect x="0" y="13" width="22" height="3.5" rx="1.75"/>
-            <!-- Shaft -->
-            <rect x="9.25" y="16.5" width="3.5" height="15.5" rx="1.75"/>
-          </svg>
-        </span>
-        <span class="header-title">Government of Barbados</span>
-      </div>
-      <div class="header-page-label">GovTech Forms &mdash; Design decision log</div>
+  <!-- ══════════════════════════════════
+       TOP BAR — blue-100
+  ══════════════════════════════════ -->
+  <div style="background:#00267f; color:#fff;">
+    <div style="max-width:1200px; margin:0 auto; padding:6px 1rem; display:flex; align-items:center; gap:8px;">
+      <img src="https://alpha.gov.bb/images/coat-of-arms.png" alt="Coat of Arms" style="height:16px;" />
+      <span style="font-size:0.9rem; font-weight:300;">Official government website</span>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-outline-header btn-sm" onclick="openExport()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export
-      </button>
-      <button class="btn btn-header btn-sm" onclick="openModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New decision
-      </button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       HEADER — yellow-100 + GOB wordmark
+  ══════════════════════════════════ -->
+  <header style="background:#ffc726;">
+    <div style="max-width:1200px; margin:0 auto; padding:10px 1rem;">
+      <svg width="276" viewBox="0 0 276 27" fill="currentColor" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Government of Barbados" style="height:27px; color:#000;">
+        <g>
+          <path d="M39.079 21.527C37.5026 21.527 36.103 21.1903 34.8802 20.5168C33.6721 19.8286 32.7219 18.8916 32.0294 17.7057C31.337 16.5051 30.9908 15.1288 30.9908 13.5769C30.9908 12.0249 31.337 10.6559 32.0294 9.47001C32.7219 8.26943 33.6721 7.3324 34.8802 6.65891C36.103 5.97077 37.5026 5.6267 39.079 5.6267C40.0219 5.6267 40.8911 5.7658 41.6867 6.04398C42.4823 6.32216 43.1821 6.71015 43.7861 7.20795C44.4049 7.69111 44.9205 8.24747 45.3331 8.87704L42.858 10.4144C42.6075 10.0191 42.276 9.66767 41.8635 9.3602C41.4657 9.05274 41.0237 8.81116 40.5376 8.63547C40.0514 8.45977 39.5652 8.37192 39.079 8.37192C38.1067 8.37192 37.2448 8.59886 36.4934 9.05274C35.7421 9.49197 35.1527 10.0996 34.7255 10.8756C34.2982 11.6515 34.0846 12.552 34.0846 13.5769C34.0846 14.5871 34.2909 15.4875 34.7034 16.2782C35.1307 17.0688 35.7273 17.691 36.4934 18.1449C37.2595 18.5841 38.1435 18.8038 39.1453 18.8038C39.8967 18.8038 40.567 18.6647 41.1563 18.3865C41.7456 18.0937 42.2171 17.691 42.5707 17.1786C42.9243 16.6661 43.1231 16.0659 43.1673 15.3777H39.5873V13.0278H46.0844V14.8946C46.055 16.3001 45.7382 17.5007 45.1342 18.4963C44.5301 19.4773 43.7051 20.2313 42.6591 20.7584C41.613 21.2708 40.4197 21.527 39.079 21.527Z"/>
+          <path d="M52.8353 21.527C51.7156 21.527 50.7138 21.2854 49.8298 20.8023C48.9606 20.3045 48.2755 19.6237 47.7746 18.7598C47.2884 17.896 47.0453 16.9004 47.0453 15.773C47.0453 14.6457 47.2884 13.6501 47.7746 12.7862C48.2608 11.9224 48.9385 11.2489 49.8077 10.7658C50.677 10.268 51.6714 10.0191 52.7911 10.0191C53.9255 10.0191 54.9273 10.268 55.7966 10.7658C56.6658 11.2489 57.3435 11.9224 57.8297 12.7862C58.3159 13.6501 58.559 14.6457 58.559 15.773C58.559 16.9004 58.3159 17.896 57.8297 18.7598C57.3435 19.6237 56.6658 20.3045 55.7966 20.8023C54.9421 21.2854 53.955 21.527 52.8353 21.527ZM52.8353 18.8477C53.3804 18.8477 53.8592 18.7159 54.2717 18.4524C54.6843 18.1888 55.001 17.8301 55.222 17.3763C55.4577 16.9077 55.5756 16.3733 55.5756 15.773C55.5756 15.1728 55.4577 14.6457 55.222 14.1918C54.9863 13.7233 54.6548 13.3572 54.2275 13.0937C53.815 12.8302 53.3362 12.6984 52.7911 12.6984C52.2607 12.6984 51.7819 12.8302 51.3547 13.0937C50.9421 13.3572 50.618 13.7233 50.3823 14.1918C50.1466 14.6457 50.0287 15.1728 50.0287 15.773C50.0287 16.3733 50.1466 16.9077 50.3823 17.3763C50.618 17.8301 50.9495 18.1888 51.3768 18.4524C51.804 18.7159 52.2902 18.8477 52.8353 18.8477Z"/>
+          <path d="M62.8109 21.2635L58.2806 10.2826H61.2861L64.2694 17.9472L67.2528 10.2826H70.2583L65.728 21.2635H62.8109Z"/>
+          <path d="M75.7678 21.527C74.6776 21.527 73.7126 21.2854 72.8729 20.8023C72.0331 20.3045 71.3701 19.6237 70.884 18.7598C70.4125 17.896 70.1768 16.9004 70.1768 15.773C70.1768 14.6457 70.4199 13.6501 70.906 12.7862C71.407 11.9224 72.0847 11.2489 72.9392 10.7658C73.8084 10.268 74.8029 10.0191 75.9225 10.0191C76.8949 10.0191 77.7862 10.2753 78.5965 10.7877C79.4216 11.2855 80.0772 12.0249 80.5633 13.0059C81.0643 13.9722 81.3147 15.1508 81.3147 16.5417H73.2265C73.3001 17.2738 73.6169 17.8594 74.1767 18.2986C74.7366 18.7232 75.3701 18.9355 76.0772 18.9355C76.6813 18.9355 77.1748 18.8111 77.5579 18.5622C77.9409 18.2986 78.2356 17.9619 78.4418 17.5519L81.0495 18.5622C80.7401 19.1771 80.335 19.7115 79.8341 20.1654C79.3479 20.6046 78.766 20.9414 78.0883 21.1756C77.4106 21.4099 76.6371 21.527 75.7678 21.527ZM73.3811 14.3894H78.1545C78.1103 13.9356 77.963 13.5695 77.7126 13.2914C77.4621 13.0132 77.1675 12.8082 76.8286 12.6764C76.4898 12.5447 76.1583 12.4788 75.8341 12.4788C75.5247 12.4788 75.1859 12.5447 74.8176 12.6764C74.464 12.7936 74.1472 12.9912 73.8673 13.2694C73.6021 13.5476 73.4401 13.9209 73.3811 14.3894Z"/>
+          <path d="M82.4937 21.2635V10.2826H85.4107V12.3031C85.8675 11.6149 86.442 11.1025 87.1345 10.7658C87.8416 10.4144 88.5709 10.2387 89.3223 10.2387V13.0498C88.6446 13.0498 88.0037 13.1303 87.3997 13.2914C86.8103 13.4524 86.3315 13.716 85.9632 14.082C85.5949 14.448 85.4107 14.9165 85.4107 15.4875V21.2635H82.4937Z"/>
+          <path d="M90.8937 21.2635V10.2826H93.634L93.7666 11.776C94.1202 11.205 94.5695 10.7731 95.1146 10.4803C95.6744 10.1728 96.308 10.0191 97.0151 10.0191C97.8844 10.0191 98.6284 10.1947 99.2471 10.5461C99.8659 10.8975 100.337 11.4466 100.661 12.1933C100.986 12.9253 101.14 13.877 101.126 15.0483V21.2635H98.2085V15.6413C98.2085 14.8946 98.1201 14.3162 97.9433 13.9063C97.7812 13.4963 97.5455 13.2035 97.2361 13.0278C96.9267 12.8375 96.5658 12.7423 96.1533 12.7423C95.4019 12.7277 94.82 12.9546 94.4074 13.4231C94.0097 13.8916 93.8108 14.5871 93.8108 15.5095V21.2635H90.8937Z"/>
+          <path d="M103.196 21.2635V10.2826H105.936L106.069 11.7101C106.407 11.1538 106.842 10.7365 107.372 10.4583C107.903 10.1655 108.492 10.0191 109.14 10.0191C110.039 10.0191 110.79 10.2094 111.395 10.5901C112.013 10.9707 112.463 11.5564 112.743 12.347C113.067 11.6003 113.523 11.0293 114.113 10.634C114.702 10.224 115.387 10.0191 116.168 10.0191C117.464 10.0191 118.451 10.429 119.129 11.2489C119.807 12.0542 120.146 13.2987 120.146 14.9824V21.2635H117.229V15.6413C117.229 14.8946 117.148 14.3162 116.986 13.9063C116.824 13.4963 116.603 13.2035 116.323 13.0278C116.043 12.8375 115.711 12.7423 115.328 12.7423C114.621 12.7277 114.076 12.9546 113.693 13.4231C113.31 13.8916 113.118 14.5871 113.118 15.5095V21.2635H110.201V15.6413C110.201 14.8946 110.12 14.3162 109.958 13.9063C109.811 13.4963 109.59 13.2035 109.295 13.0278C109.015 12.8375 108.684 12.7423 108.301 12.7423C107.593 12.7277 107.048 12.9546 106.665 13.4231C106.297 13.8916 106.113 14.5871 106.113 15.5095V21.2635H103.196Z"/>
+          <path d="M126.946 21.527C125.856 21.527 124.891 21.2854 124.051 20.8023C123.211 20.3045 122.548 19.6237 122.062 18.7598C121.59 17.896 121.355 16.9004 121.355 15.773C121.355 14.6457 121.598 13.6501 122.084 12.7862C122.585 11.9224 123.263 11.2489 124.117 10.7658C124.986 10.268 125.981 10.0191 127.1 10.0191C128.073 10.0191 128.964 10.2753 129.774 10.7877C130.6 11.2855 131.255 12.0249 131.741 13.0059C132.242 13.9722 132.493 15.1508 132.493 16.5417H124.404C124.478 17.2738 124.795 17.8594 125.355 18.2986C125.915 18.7232 126.548 18.9355 127.255 18.9355C127.859 18.9355 128.353 18.8111 128.736 18.5622C129.119 18.2986 129.414 17.9619 129.62 17.5519L132.227 18.5622C131.918 19.1771 131.513 19.7115 131.012 20.1654C130.526 20.6046 129.944 20.9414 129.266 21.1756C128.588 21.4099 127.815 21.527 126.946 21.527ZM124.559 14.3894H129.332C129.288 13.9356 129.141 13.5695 128.891 13.2914C128.64 13.0132 128.345 12.8082 128.007 12.6764C127.668 12.5447 127.336 12.4788 127.012 12.4788C126.703 12.4788 126.364 12.5447 125.996 12.6764C125.642 12.7936 125.325 12.9912 125.045 13.2694C124.78 13.5476 124.618 13.9209 124.559 14.3894Z"/>
+          <path d="M133.93 21.2635V10.2826H136.67L136.803 11.776C137.156 11.205 137.606 10.7731 138.151 10.4803C138.711 10.1728 139.344 10.0191 140.051 10.0191C140.92 10.0191 141.664 10.1947 142.283 10.5461C142.902 10.8975 143.373 11.4466 143.698 12.1933C144.022 12.9253 144.176 13.877 144.162 15.0483V21.2635H141.245V15.6413C141.245 14.8946 141.156 14.3162 140.979 13.9063C140.817 13.4963 140.582 13.2035 140.272 13.0278C139.963 12.8375 139.602 12.7423 139.189 12.7423C138.438 12.7277 137.856 12.9546 137.444 13.4231C137.046 13.8916 136.847 14.5871 136.847 15.5095V21.2635H133.93Z"/>
+          <path d="M150.526 21.527C149.303 21.527 148.375 21.2269 147.742 20.6266C147.123 20.0263 146.813 19.1698 146.813 18.0571V12.7423H145.023V10.2826H146.813V6.85656H149.731V10.2826H152.493V12.7423H149.731V17.4202C149.731 17.8887 149.834 18.2474 150.04 18.4963C150.246 18.7306 150.548 18.8477 150.946 18.8477C151.093 18.8477 151.255 18.8184 151.432 18.7598C151.609 18.6866 151.793 18.5841 151.985 18.4524L153.001 20.6266C152.648 20.8901 152.25 21.1024 151.808 21.2635C151.381 21.4392 150.953 21.527 150.526 21.527Z"/>
+          <path d="M186.422 21.2635V5.89025H191.66C192.72 5.89025 193.649 6.0513 194.444 6.37341C195.24 6.69551 195.859 7.18599 196.3 7.84485C196.742 8.48906 196.963 9.29432 196.963 10.2606C196.963 10.8609 196.809 11.4173 196.499 11.9297C196.205 12.4275 195.785 12.8594 195.24 13.2255C195.962 13.5915 196.514 14.082 196.897 14.6969C197.295 15.2972 197.494 16.8711 197.494 16.8711C197.494 16.8711 197.28 18.6061 196.853 19.265C196.426 19.9238 195.829 20.4216 195.063 20.7584C194.297 21.0951 193.398 21.2635 192.367 21.2635H186.422ZM189.383 18.6061H192.08C192.801 18.6061 193.369 18.4304 193.781 18.079C194.194 17.713 194.4 17.2298 194.4 16.6296C194.4 16 194.172 15.5095 193.715 15.1581C193.258 14.7921 192.632 14.6091 191.836 14.6091H189.383V18.6061ZM189.383 12.1494H191.726C192.389 12.1494 192.912 11.981 193.295 11.6442C193.678 11.3075 193.87 10.8316 193.87 10.2167C193.87 9.60179 193.656 9.12595 193.229 8.7892C192.801 8.45245 192.22 8.28408 191.483 8.28408H189.383V12.1494Z"/>
+          <path d="M202.673 21.527C201.347 21.527 200.316 21.2342 199.58 20.6486C198.858 20.0629 198.497 19.2357 198.497 18.1669C198.497 16.9956 198.887 16.1171 199.668 15.5315C200.464 14.9312 201.576 14.631 203.005 14.631H205.613C205.509 13.9575 205.296 13.4451 204.972 13.0937C204.648 12.7277 204.184 12.5447 203.58 12.5447C203.108 12.5447 202.681 12.6472 202.298 12.8521C201.915 13.0571 201.591 13.3719 201.325 13.7965L198.762 12.918C198.968 12.4495 199.27 11.9956 199.668 11.5564C200.066 11.1025 200.581 10.7365 201.215 10.4583C201.863 10.1655 202.651 10.0191 203.58 10.0191C204.699 10.0191 205.627 10.2314 206.364 10.656C207.115 11.0805 207.668 11.6808 208.021 12.4568C208.39 13.2182 208.566 14.1259 208.552 15.1801L208.485 21.2635H205.767L205.723 19.9897C205.443 20.4875 205.045 20.8682 204.53 21.1317C204.029 21.3953 203.41 21.527 202.673 21.527ZM203.16 19.1112C203.631 19.1112 204.058 19.0014 204.441 18.7818C204.824 18.5622 205.126 18.2767 205.347 17.9253C205.568 17.5739 205.679 17.2079 205.679 16.8272V16.7833H204.021C203.064 16.7833 202.401 16.9004 202.033 17.1347C201.664 17.3543 201.48 17.6691 201.48 18.079C201.48 18.4011 201.627 18.6574 201.922 18.8477C202.217 19.0234 202.629 19.1112 203.16 19.1112Z"/>
+          <path d="M210.512 21.2635V10.2826H213.429V12.3031C213.886 11.6149 214.461 11.1025 215.153 10.7658C215.86 10.4144 216.59 10.2387 217.341 10.2387V13.0498C216.663 13.0498 216.022 13.1303 215.418 13.2914C214.829 13.4524 214.35 13.716 213.982 14.082C213.614 14.448 213.429 14.9165 213.429 15.4875V21.2635H210.512Z"/>
+          <path d="M224.7 21.527C223.948 21.527 223.293 21.3733 222.733 21.0658C222.173 20.7437 221.702 20.2898 221.318 19.7042L221.208 21.2635H218.446V5.89025H221.363V11.776C221.731 11.205 222.195 10.7731 222.755 10.4803C223.315 10.1728 223.963 10.0191 224.7 10.0191C225.716 10.0191 226.593 10.2533 227.329 10.7218C228.081 11.1904 228.663 11.8565 229.075 12.7204C229.488 13.5695 229.694 14.5871 229.694 15.773C229.694 16.9443 229.488 17.9619 229.075 18.8257C228.663 19.6896 228.081 20.3557 227.329 20.8242C226.593 21.2928 225.716 21.527 224.7 21.527ZM223.948 18.8697C224.479 18.8697 224.943 18.7379 225.34 18.4743C225.753 18.2108 226.077 17.8448 226.313 17.3763C226.549 16.9077 226.666 16.3733 226.666 15.773C226.666 15.1728 226.549 14.6384 226.313 14.1698C226.092 13.7013 225.775 13.3426 225.363 13.0937C224.965 12.8302 224.501 12.6984 223.97 12.6984C223.469 12.6984 223.02 12.8302 222.622 13.0937C222.225 13.3572 221.915 13.7233 221.694 14.1918C221.473 14.6457 221.363 15.1728 221.363 15.773C221.363 16.3733 221.473 16.9077 221.694 17.3763C221.915 17.8448 222.217 18.2108 222.6 18.4743C222.998 18.7379 223.447 18.8697 223.948 18.8697Z"/>
+          <path d="M234.674 21.527C233.348 21.527 232.317 21.2342 231.58 20.6486C230.858 20.0629 230.497 19.2357 230.497 18.1669C230.497 16.9956 230.887 16.1171 231.668 15.5315C232.464 14.9312 233.576 14.631 235.005 14.631H237.613C237.51 13.9575 237.296 13.4451 236.972 13.0937C236.648 12.7277 236.184 12.5447 235.58 12.5447C235.108 12.5447 234.681 12.6472 234.298 12.8521C233.915 13.0571 233.591 13.3719 233.326 13.7965L230.762 12.918C230.969 12.4495 231.271 11.9956 231.668 11.5564C232.066 11.1025 232.582 10.7365 233.215 10.4583C233.863 10.1655 234.652 10.0191 235.58 10.0191C236.7 10.0191 237.628 10.2314 238.364 10.656C239.116 11.0805 239.668 11.6808 240.022 12.4568C240.39 13.2182 240.567 14.1259 240.552 15.1801L240.486 21.2635H237.768L237.723 19.9897C237.443 20.4875 237.046 20.8682 236.53 21.1317C236.029 21.3953 235.41 21.527 234.674 21.527ZM235.16 19.1112C235.631 19.1112 236.059 19.0014 236.442 18.7818C236.825 18.5622 237.127 18.2767 237.348 17.9253C237.569 17.5739 237.679 17.2079 237.679 16.8272V16.7833H236.022C235.064 16.7833 234.401 16.9004 234.033 17.1347C233.665 17.3543 233.48 17.6691 233.48 18.079C233.48 18.4011 233.628 18.6574 233.922 18.8477C234.217 19.0234 234.63 19.1112 235.16 19.1112Z"/>
+          <path d="M246.758 21.527C245.742 21.527 244.858 21.2928 244.107 20.8242C243.37 20.3557 242.795 19.6896 242.383 18.8257C241.97 17.9619 241.764 16.9443 241.764 15.773C241.764 14.5871 241.97 13.5695 242.383 12.7204C242.795 11.8565 243.37 11.1904 244.107 10.7218C244.858 10.2533 245.742 10.0191 246.758 10.0191C247.48 10.0191 248.121 10.1728 248.681 10.4803C249.256 10.7731 249.72 11.1977 250.073 11.754V5.89025H252.99V21.2635H250.228L250.14 19.7262C249.771 20.2972 249.3 20.7437 248.725 21.0658C248.151 21.3733 247.495 21.527 246.758 21.527ZM247.51 18.8697C247.996 18.8697 248.423 18.7525 248.792 18.5183C249.175 18.2694 249.477 17.9253 249.698 17.4861C249.919 17.0468 250.044 16.549 250.073 15.9927V15.5534C250.044 14.9971 249.919 14.5066 249.698 14.082C249.477 13.6428 249.175 13.306 248.792 13.0717C248.409 12.8228 247.974 12.6984 247.488 12.6984C246.957 12.6984 246.486 12.8302 246.073 13.0937C245.676 13.3426 245.359 13.7013 245.123 14.1698C244.902 14.6384 244.792 15.1728 244.792 15.773C244.792 16.3733 244.909 16.9077 245.145 17.3763C245.381 17.8448 245.698 18.2108 246.095 18.4743C246.508 18.7379 246.979 18.8697 247.51 18.8697Z"/>
+          <path d="M260.409 21.527C259.289 21.527 258.287 21.2854 257.403 20.8023C256.534 20.3045 255.849 19.6237 255.348 18.7598C254.862 17.896 254.619 16.9004 254.619 15.773C254.619 14.6457 254.862 13.6501 255.348 12.7862C255.834 11.9224 256.512 11.2489 257.381 10.7658C258.25 10.268 259.245 10.0191 260.364 10.0191C261.499 10.0191 262.501 10.268 263.37 10.7658C264.239 11.2489 264.917 11.9224 265.403 12.7862C265.889 13.6501 266.132 14.6457 266.132 15.773C266.132 16.9004 265.889 17.896 265.403 18.7598C264.917 19.6237 264.239 20.3045 263.37 20.8023C262.515 21.2854 261.528 21.527 260.409 21.527ZM260.409 18.8477C260.954 18.8477 261.433 18.7159 261.845 18.4524C262.258 18.1888 262.574 17.8301 262.795 17.3763C263.031 16.9077 263.149 16.3733 263.149 15.773C263.149 15.1728 263.031 14.6457 262.795 14.1918C262.56 13.7233 262.228 13.3572 261.801 13.0937C261.388 12.8302 260.91 12.6984 260.364 12.6984C259.834 12.6984 259.355 12.8302 258.928 13.0937C258.515 13.3572 258.191 13.7233 257.956 14.1918C257.72 14.6457 257.602 15.1728 257.602 15.773C257.602 16.3733 257.72 16.9077 257.956 17.3763C258.191 17.8301 258.523 18.1888 258.95 18.4524C259.377 18.7159 259.863 18.8477 260.409 18.8477Z"/>
+          <path d="M271.536 21.527C270.829 21.527 270.166 21.4245 269.547 21.2196C268.928 20.9999 268.383 20.6925 267.912 20.2972C267.44 19.8872 267.072 19.3894 266.807 18.8038L269.304 17.6618C269.525 18.0131 269.827 18.3206 270.21 18.5841C270.593 18.833 271.035 18.9575 271.536 18.9575C272.022 18.9575 272.398 18.8916 272.663 18.7598C272.928 18.6134 273.061 18.4085 273.061 18.1449C273.061 17.8814 272.95 17.691 272.729 17.5739C272.523 17.4421 272.236 17.3323 271.867 17.2445L270.851 16.9809C269.79 16.7028 268.95 16.2635 268.332 15.6632C267.728 15.0483 267.426 14.3455 267.426 13.5549C267.426 12.4275 267.787 11.5564 268.508 10.9415C269.245 10.3265 270.284 10.0191 271.624 10.0191C272.317 10.0191 272.958 10.1215 273.547 10.3265C274.151 10.5315 274.667 10.817 275.094 11.183C275.521 11.5491 275.816 11.9737 275.978 12.4568L273.569 13.5549C273.466 13.2621 273.216 13.0278 272.818 12.8521C272.42 12.6618 272.022 12.5666 271.624 12.5666C271.227 12.5666 270.917 12.6545 270.696 12.8302C270.49 12.9912 270.387 13.2182 270.387 13.511C270.387 13.7013 270.49 13.8624 270.696 13.9941C270.902 14.1113 271.197 14.2138 271.58 14.3016L273.017 14.653C273.739 14.8287 274.313 15.1142 274.74 15.5095C275.182 15.8902 275.499 16.3221 275.691 16.8052C275.897 17.2738 276 17.735 276 18.1888C276 18.8477 275.801 19.4333 275.403 19.9458C275.02 20.4436 274.49 20.8316 273.812 21.1098C273.149 21.3879 272.39 21.527 271.536 21.527Z"/>
+          <path d="M165.302 21.527C164.182 21.527 163.18 21.2855 162.296 20.8023C161.427 20.3045 160.742 19.6237 160.241 18.7598C159.755 17.896 159.512 16.9004 159.512 15.773C159.512 14.6457 159.755 13.6501 160.241 12.7862C160.727 11.9224 161.405 11.2489 162.274 10.7658C163.144 10.268 164.138 10.0191 165.258 10.0191C166.392 10.0191 167.394 10.268 168.263 10.7658C169.132 11.2489 169.81 11.9224 170.296 12.7862C170.782 13.6501 171.026 14.6457 171.026 15.773C171.026 16.9004 170.782 17.896 170.296 18.7598C169.81 19.6237 169.132 20.3045 168.263 20.8023C167.409 21.2855 166.422 21.527 165.302 21.527ZM165.302 18.8477C165.847 18.8477 166.326 18.7159 166.738 18.4524C167.151 18.1888 167.468 17.8301 167.689 17.3763C167.924 16.9077 168.042 16.3733 168.042 15.773C168.042 15.1728 167.924 14.6457 167.689 14.1918C167.453 13.7233 167.121 13.3572 166.694 13.0937C166.282 12.8302 165.803 12.6984 165.258 12.6984C164.727 12.6984 164.249 12.8302 163.821 13.0937C163.409 13.3572 163.085 13.7233 162.849 14.1918C162.613 14.6457 162.495 15.1728 162.495 15.773C162.495 16.3733 162.613 16.9077 162.849 17.3763C163.085 17.8301 163.416 18.1888 163.843 18.4524C164.271 18.7159 164.757 18.8477 165.302 18.8477Z"/>
+          <path d="M173.144 21.2635V12.6105H171.309V10.2826H173.144V9.18451C173.144 8.01321 173.446 7.10546 174.05 6.46125C174.654 5.8024 175.574 5.47297 176.812 5.47297C177.239 5.47297 177.689 5.54618 178.16 5.69259C178.646 5.839 179.088 6.0147 179.486 6.21967L178.403 8.30604C178.167 8.18891 177.954 8.10106 177.762 8.04249C177.571 7.98393 177.394 7.95465 177.232 7.95465C176.834 7.95465 176.539 8.09374 176.348 8.37192C176.156 8.63547 176.061 9.06738 176.061 9.66767V10.2826H178.779V12.6105H176.061V21.2635H173.144Z"/>
+          <path d="M12.5786 0C11.6253 2.46943 10.6536 5.03986 8.57466 7.00774C9.21998 6.80573 10.3493 6.62461 11.0753 6.64203V17.0283L7.988 17.4636C7.878 17.4532 7.84133 17.2895 7.84133 17.0666C7.54434 13.8413 6.74135 11.1316 5.81736 8.32779C5.75136 7.94466 4.58171 6.48181 5.4837 6.73955C5.5937 6.75348 6.80002 7.2202 6.60935 6.99729C4.96671 5.38119 2.56508 4.21788 0.233112 3.87306C0.0277812 3.8243 -0.0932171 3.92183 0.0901136 4.14822C3.18474 8.6726 5.77336 14.012 5.75136 20.3475C6.95401 20.3475 9.86897 19.6718 11.0753 19.6718V27H12.5969L12.9453 6.53406L12.5786 0Z"/>
+          <path d="M12.5786 0C13.5319 2.46943 14.5036 5.03986 16.5825 7.00774C15.9372 6.80573 14.8079 6.62461 14.0819 6.64203V17.0283L17.1692 17.4636C17.2792 17.4532 17.3159 17.2895 17.3159 17.0666C17.6129 13.8413 18.4158 11.1316 19.3398 8.32779C19.4058 7.94466 20.5755 6.48181 19.6735 6.73955C19.5635 6.75348 18.3572 7.2202 18.5478 6.99729C20.1905 5.38119 22.5921 4.21788 24.9241 3.87306C25.1294 3.8243 25.2504 3.92183 25.0671 4.14822C21.9725 8.6726 19.3838 14.012 19.4058 20.3475C18.2032 20.3475 15.2882 19.6718 14.0819 19.6718V27H12.5603L12.2119 6.53406L12.5786 0Z"/>
+        </g>
+      </svg>
     </div>
   </header>
-</div>
 
-<!-- App Layout -->
-<div class="app-layout">
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="sidebarSearch" placeholder="Search decisions…" oninput="handleSidebarSearch(this.value)">
+  <!-- ══════════════════════════════════
+       ALPHA BANNER
+  ══════════════════════════════════ -->
+  <div style="background:#e5e9f2; border-bottom:1px solid #99a8cc;">
+    <div style="max-width:1200px; margin:0 auto; padding:6px 1rem; font-size:0.9rem;">
+      This page is in <a href="#" style="color:#0e5f64; text-decoration:underline;">alpha</a>.
     </div>
+  </div>
 
-    <div class="sidebar-section">
-      <span class="sidebar-label">Views</span>
-      <button class="nav-item active" id="nav-dashboard" onclick="showView('dashboard')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Dashboard
-      </button>
-      <button class="nav-item" id="nav-all" onclick="showAllDecisions()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        All Decisions
-        <span class="nav-count" id="count-all">0</span>
-      </button>
-    </div>
+  <!-- ══════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════ -->
+  <main style="flex:1;">
+    <div style="max-width:1200px; margin:0 auto; padding:2rem 1rem 5rem;">
 
-    <div class="sidebar-section">
-      <div class="sidebar-collapsible-header" onclick="toggleSidebarSection('byStatus')">
-        <span class="sidebar-label">By Status</span>
-        <svg class="collapse-chevron" id="chevron-byStatus" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      <!-- Breadcrumb -->
+      <nav aria-label="Breadcrumb" style="font-size:0.875rem; color:#595959; margin-bottom:1rem;">
+        <a href="#" style="color:#0e5f64; text-decoration:underline;">GovTech Barbados</a>
+        <span style="margin:0 6px; color:#999;">›</span>
+        Form decision log
+      </nav>
+
+      <h1 style="font-size:2.25rem; font-weight:700; margin-bottom:0.5rem; line-height:1.15;">Form decision log</h1>
+      <p style="color:#595959; margin-bottom:1.75rem;">Design and field decisions made during the NIS forms programme, with context and rationale.</p>
+
+      <!-- CONTENTS BOX -->
+      <div style="background:#eaf9f9; border:1px solid #ace6e9; border-radius:0.375rem; padding:1.25rem 1.5rem; margin-bottom:2rem;">
+        <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#595959; margin-bottom:0.6rem;">Contents</p>
+        <ol id="toc" style="padding-left:1.25rem;"></ol>
       </div>
-      <div class="sidebar-collapsible-content" id="collapse-byStatus">
-        <button class="nav-item" id="nav-proposed" onclick="showView('all'); filterByStatus('proposed')">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--blue);flex-shrink:0;display:inline-block"></span>
-          Proposed
-          <span class="nav-count" id="count-proposed">0</span>
-        </button>
-        <button class="nav-item" id="nav-accepted" onclick="showView('all'); filterByStatus('accepted')">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;display:inline-block"></span>
-          Accepted
-          <span class="nav-count" id="count-accepted">0</span>
-        </button>
-        <button class="nav-item" id="nav-rejected" onclick="showView('all'); filterByStatus('rejected')">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0;display:inline-block"></span>
-          Rejected
-          <span class="nav-count" id="count-rejected">0</span>
-        </button>
-        <button class="nav-item" id="nav-deprecated" onclick="showView('all'); filterByStatus('deprecated')">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0;display:inline-block"></span>
-          Deprecated
-          <span class="nav-count" id="count-deprecated">0</span>
-        </button>
-        <button class="nav-item" id="nav-superseded" onclick="showView('all'); filterByStatus('superseded')">
-          <span style="width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0;display:inline-block"></span>
-          Superseded
-          <span class="nav-count" id="count-superseded">0</span>
-        </button>
+
+      <!-- FILTER BAR -->
+      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:1.75rem;">
+        <button class="filter-btn active" data-filter="all"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">All</button>
+        <button class="filter-btn" data-filter="email"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Email</button>
+        <button class="filter-btn" data-filter="field"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Field</button>
+        <button class="filter-btn" data-filter="validation"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Validation</button>
+        <button class="filter-btn" data-filter="structure"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Structure</button>
+        <button class="filter-btn" data-filter="conditional"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Conditional</button>
+        <span id="filter-count" style="margin-left:auto; font-family:monospace; font-size:0.8rem; color:#595959;"></span>
       </div>
+
+      <!-- DECISIONS ROOT -->
+      <div id="decisions-root"></div>
+
     </div>
-
-    <div class="sidebar-section">
-      <span class="sidebar-label">By Category</span>
-      <div class="filter-group" id="categoryFilters"></div>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="main-content">
-
-    <!-- Dashboard View -->
-    <div class="view active" id="view-dashboard">
-      <div class="section-header">
-        <div class="section-title">Overview</div>
-        <button class="btn btn-primary btn-sm" onclick="openModal()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Log Decision
-        </button>
-      </div>
-      <div class="stats-grid" id="statsGrid"></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div>
-          <div class="section-header"><div class="section-title">Recent Decisions <small id="recentLabel"></small></div></div>
-          <div class="decisions-list" id="recentList"></div>
-        </div>
-        <div>
-          <div class="section-header"><div class="section-title">Activity Timeline</div></div>
-          <div style="background:var(--white);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)">
-            <div class="timeline" id="timelineList"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- All Decisions View -->
-    <div class="view" id="view-all">
-      <div class="toolbar">
-        <div class="toolbar-search">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="mainSearch" placeholder="Search by title, context, decision, author…" oninput="applyFilters()">
-        </div>
-        <select class="sort-select" id="sortSelect" onchange="applyFilters()">
-          <option value="date-desc">Newest first</option>
-          <option value="date-asc">Oldest first</option>
-          <option value="title-asc">Title A–Z</option>
-          <option value="id-asc">ID order</option>
-        </select>
-        <div class="dropdown" id="exportDropdown">
-          <button class="btn btn-ghost btn-sm" onclick="toggleDropdown('exportDropdown')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export
-          </button>
-          <div class="dropdown-menu">
-            <button class="dropdown-item" onclick="exportJSON(); closeDropdowns()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-              Export JSON
-            </button>
-            <button class="dropdown-item" onclick="exportMarkdown(); closeDropdowns()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Export Markdown
-            </button>
-            <button class="dropdown-item" onclick="exportCSV(); closeDropdowns()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-              Export CSV
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="section-title" style="margin-bottom:12px" id="listHeading">All Decisions</div>
-      <div class="decisions-list" id="mainList"></div>
-    </div>
-
-    <!-- Detail View -->
-    <div class="view" id="view-detail">
-      <div class="detail-actions">
-        <button class="detail-back" onclick="goBack()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </button>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" id="detailEditBtn" onclick="editCurrentDetail()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit
-          </button>
-          <button class="btn btn-danger btn-sm" id="detailDeleteBtn" onclick="deleteCurrentDetail()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            Delete
-          </button>
-        </div>
-      </div>
-      <div id="detailContent"></div>
-    </div>
-
   </main>
-</div>
 
-<!-- Add/Edit Modal -->
-<div class="modal-overlay" id="modalOverlay" onclick="handleModalOverlayClick(event)">
-  <div class="modal" id="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Log New Design Decision</div>
-      <button class="btn btn-icon btn-ghost btn-sm" onclick="closeModal()" aria-label="Close">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  <!-- ══════════════════════════════════
+       FOOTER
+  ══════════════════════════════════ -->
+  <footer style="background:#00267f; color:#fff;">
+    <div style="max-width:1200px; margin:0 auto; padding:2rem 1rem; font-size:0.875rem; opacity:0.85;">
+      GovTech Barbados · NIS Forms Programme · For internal use
     </div>
-    <div class="modal-body">
-      <input type="hidden" id="editId">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="fTitle">Title <span class="required">*</span></label>
-          <input class="form-control" id="fTitle" type="text" placeholder="Short, descriptive title" maxlength="120" oninput="updateCharCount('fTitle','titleCount',120)">
-          <div style="display:flex;justify-content:space-between"><span class="form-hint">What decision was made?</span><span class="char-count" id="titleCount">120</span></div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="fStatus">Status <span class="required">*</span></label>
-          <select class="form-control" id="fStatus">
-            <option value="proposed">Proposed</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="deprecated">Deprecated</option>
-            <option value="superseded">Superseded</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="fCategory">Category <span class="required">*</span></label>
-          <select class="form-control" id="fCategory">
-            <option value="Navigation">Navigation</option>
-            <option value="Typography">Typography</option>
-            <option value="Colour">Colour</option>
-            <option value="Layout">Layout</option>
-            <option value="Components">Components</option>
-            <option value="Forms">Forms</option>
-            <option value="Accessibility">Accessibility</option>
-            <option value="Content">Content</option>
-            <option value="Interaction">Interaction</option>
-            <option value="Data & APIs">Data &amp; APIs</option>
-            <option value="Security">Security</option>
-            <option value="Performance">Performance</option>
-            <option value="Architecture">Architecture</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="fOwner">Owner / Author</label>
-          <input class="form-control" id="fOwner" type="text" placeholder="Name or team">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="fDate">Decision Date</label>
-          <input class="form-control" id="fDate" type="date">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="fTags">Tags</label>
-          <input class="form-control" id="fTags" type="text" placeholder="e.g. mobile, wcag, phase-2 (comma separated)">
-          <span class="form-hint">Separate multiple tags with commas</span>
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label" for="fContext">Context <span class="required">*</span></label>
-          <textarea class="form-control" id="fContext" rows="3" placeholder="What is the issue or situation that motivated this decision? What forces are at play?" maxlength="2000" oninput="updateCharCount('fContext','contextCount',2000)"></textarea>
-          <div style="display:flex;justify-content:space-between"><span class="form-hint">Background and problem statement</span><span class="char-count" id="contextCount">2000</span></div>
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label" for="fDecision">Decision <span class="required">*</span></label>
-          <textarea class="form-control" id="fDecision" rows="3" placeholder="What was decided? State the decision clearly and specifically." maxlength="2000" oninput="updateCharCount('fDecision','decisionCount',2000)"></textarea>
-          <div style="display:flex;justify-content:space-between"><span class="form-hint">The outcome or choice made</span><span class="char-count" id="decisionCount">2000</span></div>
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label" for="fRationale">Rationale</label>
-          <textarea class="form-control" id="fRationale" rows="3" placeholder="Why was this decision made? What alternatives were considered and why were they rejected?" maxlength="2000" oninput="updateCharCount('fRationale','rationaleCount',2000)"></textarea>
-          <div style="display:flex;justify-content:space-between"><span class="form-hint">Justification and considered alternatives</span><span class="char-count" id="rationaleCount">2000</span></div>
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label" for="fConsequences">Consequences</label>
-          <textarea class="form-control" id="fConsequences" rows="2" placeholder="What are the resulting implications, trade-offs, or follow-on actions?" maxlength="1000" oninput="updateCharCount('fConsequences','consequencesCount',1000)"></textarea>
-          <div style="display:flex;justify-content:space-between"><span class="form-hint">Expected outcomes and trade-offs</span><span class="char-count" id="consequencesCount">1000</span></div>
-        </div>
-      </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label class="form-label" for="fRelated">Related Decisions</label>
-          <input class="form-control" id="fRelated" type="text" placeholder="e.g. DD-001, DD-003 (comma separated IDs)">
-          <span class="form-hint">Link to related or superseded decision IDs</span>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveDecision()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        <span id="saveLabel">Log Decision</span>
-      </button>
-    </div>
-  </div>
-</div>
+  </footer>
 
-<!-- Confirm Dialog -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <div class="confirm-icon">🗑️</div>
-    <div class="confirm-title">Delete Decision?</div>
-    <div class="confirm-text" id="confirmText">This decision will be permanently removed from the log. This action cannot be undone.</div>
-    <div class="confirm-actions">
-      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
-      <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
-    </div>
-  </div>
-</div>
+  <script>
+    /* ═══════════════════════════════════════════════════
+       DECISIONS DATA
+       Edit this array to add, update or remove decisions.
+    ═══════════════════════════════════════════════════ */
+    const DECISIONS = [
+      {
+        id: "FD-001",
+        title: "Email components by recipient type",
+        summary: "MDA and applicant confirmation emails carry different content. MDA emails include full PII and submitted data for case management; applicant emails show only a reference number, service name, next steps, and a contact point to avoid unnecessary PII exposure.",
+        category: "email",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "MDA and applicant emails serve different purposes. MDA emails are internal operational tools; applicant emails are public-facing receipts.",
+        decision: "MDA emails include full applicant PII and all submitted data. Applicant emails include only a confirmation number, service name, next steps, and a contact point.",
+        rationale: "MDA staff need identifiers to locate submissions in case management systems. Reproducing data in applicant emails creates unnecessary PII exposure risk.",
+        components: [
+          { component: "Submission reference number", description: "Unique identifier generated on successful submission", mda: { status: "required" }, applicant: { status: "required" }, notes: "Primary lookup key for case management" },
+          { component: "Applicant full name", description: "Legal name as entered on the form", mda: { status: "required" }, applicant: { status: "excluded", note: "Confirmed in salutation only" }, notes: "" },
+          { component: "National Registration Number (NRN)", description: "Applicant's NRN as submitted", mda: { status: "required" }, applicant: { status: "excluded" }, notes: "PII — MDA use only" },
+          { component: "Date of birth", description: "As entered on the form", mda: { status: "required" }, applicant: { status: "excluded" }, notes: "PII — MDA use only" },
+          { component: "Service / form name", description: "Human-readable name of the form submitted", mda: { status: "required" }, applicant: { status: "required" }, notes: "" },
+          { component: "Submission date and time", description: "ISO timestamp of successful submission", mda: { status: "required" }, applicant: { status: "required" }, notes: "Atlantic Standard Time (UTC−4)" },
+          { component: "Full submitted data", description: "All field values as submitted", mda: { status: "required" }, applicant: { status: "excluded" }, notes: "Structured data for case intake; not appropriate for applicant receipt" },
+          { component: "Payment details", description: "Amount, method, and transaction reference", mda: { status: "conditional", note: "Only for forms with a payment step" }, applicant: { status: "conditional", note: "Confirmation amount and reference only" }, notes: "Do not include full card details in any email" },
+          { component: "Next steps / instructions", description: "Plain-language guidance on what happens after submission", mda: { status: "excluded" }, applicant: { status: "required" }, notes: "Drafts held in content library per service" },
+          { component: "MDA contact point", description: "Phone number or email for applicant queries", mda: { status: "excluded" }, applicant: { status: "required" }, notes: "Must match the contact on the service's public page" }
+        ],
+        variations: [
+          { title: "Payment flows", text: "Where a form includes a payment step, both MDA and applicant emails include a payment confirmation block (transaction ID, amount, date). Full card details are never included in any email." },
+          { title: "Rejection or incomplete application", text: "If a submission is rejected or flagged as incomplete, the applicant email replaces 'next steps' with a plain-language explanation and a resubmission link. MDA email includes the rejection reason code." }
+        ],
+        related: []
+      },
+      {
+        id: "FD-002",
+        title: "Date format is DD/MM/YYYY",
+        summary: "All date fields across every form use DD/MM/YYYY, implemented as three separate day / month / year inputs. This is the Barbados standard and removes the inconsistency seen across earlier form versions.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "Date fields were rendered inconsistently across forms, with some using MM/DD/YYYY and others using free-text input.",
+        decision: "All date fields use DD/MM/YYYY across all forms, implemented as three separate numeric inputs (day, month, year).",
+        rationale: "DD/MM/YYYY is the Barbados standard. Consistency across forms reduces data entry errors and simplifies downstream validation.",
+        components: null,
+        variations: [],
+        related: ["FD-003"]
+      },
+      {
+        id: "FD-003",
+        title: "NRN has a canonical label and validation pattern",
+        category: "field",
+        summary: "The National Registration Number field must always be labelled \"National Registration Number (NRN)\" — no other label variants are allowed. This replaces three different labels that existed across 9 forms, and enables consistent cross-form data matching.",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "NRN appeared under three different labels across 9 forms: 'ID number / NRN', 'National Registration Number', and 'ID number'.",
+        decision: "Canonical label is 'National Registration Number (NRN)'. No alternative labels are permitted.",
+        rationale: "A single label removes ambiguity for applicants and enables consistent cross-form data matching in downstream systems.",
+        components: null,
+        variations: [
+          { title: "Forms using 'ID number' alone", text: "Any form currently using 'ID number' as the sole label must be updated to the canonical label before publishing. This affects approximately 4 forms in the current backlog." }
+        ],
+        related: ["FD-002"]
+      },
+      {
+        id: "FD-004",
+        title: "Declaration uses a checkbox, not a signature",
+        summary: "Digital declaration sections use a mandatory checkbox (not a signature field). The checkbox replays the applicant's name and submission date in the statement. This is provisional — it has not yet been confirmed with MDAs that a checkbox meets their legal requirements.",
+        category: "structure",
+        status: "review",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "Paper forms use a signature block. The digital prototype replaced this with a checkbox that replays the applicant's name and submission date.",
+        decision: "Declaration sections use a mandatory checkbox with a plain-language statement that includes the applicant's name and the submission date. No handwritten or digital signature capture.",
+        rationale: "Signature capture is technically complex and inconsistent across devices. A checkbox captures the same legal intent accessibly. This decision is provisional pending MDA validation.",
+        components: null,
+        variations: [
+          { title: "Pending MDA legal validation", text: "It has not yet been confirmed whether a checkbox declaration meets the legal requirements currently satisfied by a wet signature. This decision is under review with the relevant MDAs and will be updated once confirmed." }
+        ],
+        related: []
+      }
+    ];
 
-<!-- Export Modal -->
-<div class="modal-overlay" id="exportOverlay" onclick="if(event.target===this)closeExport()">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-header">
-      <div class="modal-title">Export Decisions</div>
-      <button class="btn btn-icon btn-ghost btn-sm" onclick="closeExport()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <button class="btn btn-ghost" style="justify-content:flex-start;padding:14px 16px;font-size:14px" onclick="exportJSON();closeExport()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        <div style="text-align:left"><div style="font-weight:600">JSON</div><div style="font-size:12px;color:var(--grey-500)">Machine-readable, full fidelity — ideal for backups and import</div></div>
-      </button>
-      <button class="btn btn-ghost" style="justify-content:flex-start;padding:14px 16px;font-size:14px" onclick="exportMarkdown();closeExport()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <div style="text-align:left"><div style="font-weight:600">Markdown</div><div style="font-size:12px;color:var(--grey-500)">Human-readable docs, great for wikis and GitHub repos</div></div>
-      </button>
-      <button class="btn btn-ghost" style="justify-content:flex-start;padding:14px 16px;font-size:14px" onclick="exportCSV();closeExport()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-        <div style="text-align:left"><div style="font-weight:600">CSV</div><div style="font-size:12px;color:var(--grey-500)">Spreadsheet-friendly for sharing and analysis</div></div>
-      </button>
-    </div>
-  </div>
-</div>
+    /* ═══════════════════════════════════════════════════
+       RENDERING — do not edit below this line
+    ═══════════════════════════════════════════════════ */
 
-<!-- Toast Container -->
-<div class="toast-container" id="toastContainer"></div>
-
-<script>
-// ══════════════════════════════════════════════════════════════════════════════
-// State
-// ══════════════════════════════════════════════════════════════════════════════
-const STORAGE_KEY = 'alpha_gov_bb_ddl_v2';
-let decisions = [];
-let currentView = 'dashboard';
-let currentDetailId = null;
-let activeStatusFilter = null;
-let activeCategoryFilter = null;
-let confirmCallback = null;
-
-const STATUS_COLORS = {
-  proposed: '--blue', accepted: '--green', rejected: '--red',
-  deprecated: '--amber', superseded: '--purple'
-};
-const STATUS_LABELS = {
-  proposed: 'Proposed', accepted: 'Accepted', rejected: 'Rejected',
-  deprecated: 'Deprecated', superseded: 'Superseded'
-};
-const STATUS_ICONS = {
-  proposed: '●', accepted: '✓', rejected: '✗', deprecated: '⚠', superseded: '↩'
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Persistence
-// ══════════════════════════════════════════════════════════════════════════════
-function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(decisions)); } catch(e) {}
-}
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) { decisions = JSON.parse(raw); return; }
-  } catch(e) {}
-  decisions = getSeedData();
-  save();
-}
-
-function nextId() {
-  if (!decisions.length) return 'DD-001';
-  const nums = decisions.map(d => parseInt(d.id.replace('DD-','')) || 0);
-  return 'DD-' + String(Math.max(...nums) + 1).padStart(3,'0');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Seed data
-// ══════════════════════════════════════════════════════════════════════════════
-function getSeedData() {
-  return [
-    {
-      id: 'DD-001',
-      title: 'Form field labels – sentence case only',
-      status: 'accepted',
-      category: 'Form labels',
-      owner: 'Amy',
-      date: '2026-04-01',
-      tags: ['forms','accessibility','content'],
-      context: 'What capitalisation style should we use for form field labels?',
-      decision: 'Use sentence case only for form field labels; avoid Title Case.',
-      rationale: 'Sentence case improves readability and is better for accessibility, especially for users with cognitive or reading difficulties.',
-      consequences: 'Notes: Referenced later by Shannon when answering questions about form field labels.\n\nSource: Slack – message from Amy on 1 Apr 2026 about title case vs sentence case.',
-      related: '',
-      createdAt: '2026-04-01T09:00:00Z',
-      updatedAt: '2026-04-01T09:00:00Z'
-    },
-    {
-      id: 'DD-002',
-      title: 'Form emails – MDA vs applicant and PII',
-      status: 'accepted',
-      category: 'Form emails',
-      owner: 'Amoge, Leann, Adunni, Gavin, Shannon',
-      date: '2026-04-01',
-      tags: ['emails','pii','forms','mda'],
-      context: 'How should we structure and send emails for submitted forms, for MDAs and applicants?',
-      decision: 'Send an email to the MDA with applicant details; send a separate confirmation to the applicant with no PII, with variations when payment or other conditions apply.',
-      rationale: 'MDAs need full details to act on submissions, while applicants should receive confirmations without exposing personal data in email.',
-      consequences: 'Notes: The email with details is sent by alpha.gov.bb; the payment provider only sends a PDF receipt.\n\nSource: Slack – forms prototyping team discussion on 1 Apr 2026 (messages from Amoge, Leann, Adunni, Gavin, Shannon).',
-      related: 'DD-003',
-      createdAt: '2026-04-01T09:30:00Z',
-      updatedAt: '2026-04-01T09:30:00Z'
-    },
-    {
-      id: 'DD-003',
-      title: 'MDA email timing when payments are involved',
-      status: 'accepted',
-      category: 'Form emails',
-      owner: 'Shannon',
-      date: '2026-04-01',
-      tags: ['emails','payments','mda'],
-      context: 'When should we send the email to the MDA for forms that require a payment?',
-      decision: 'If payments are enabled, do not send the email to the MDA until payment has been successfully completed and confirmed by the third-party provider.',
-      rationale: 'Avoid notifying MDAs about submissions where the user has not completed payment; keep MDA notifications aligned with successful, actionable submissions.',
-      consequences: 'Source: Slack – Shannon\'s explanation to Efe on 1 Apr 2026 about payment-confirmed emails.',
-      related: 'DD-002',
-      createdAt: '2026-04-01T10:00:00Z',
-      updatedAt: '2026-04-01T10:00:00Z'
-    },
-    {
-      id: 'DD-004',
-      title: 'Documenting decisions centrally',
-      status: 'accepted',
-      category: 'Design ops / documentation',
-      owner: 'Gavin',
-      date: '2026-04-01',
-      tags: ['documentation','design-ops','process'],
-      context: 'How do we avoid tools and teammates missing important design principles and decisions?',
-      decision: 'Document design principles and decisions in a central, easily accessible place rather than only in Slack threads or prototypes.',
-      rationale: 'People and tools cannot infer all constraints from prototypes alone; centralised documentation reduces confusion and duplicated discussion.',
-      consequences: 'Notes: This app is one implementation of that decision.\n\nSource: Slack – Gavin\'s reflection on 1 Apr 2026 about documenting decisions.',
-      related: '',
-      createdAt: '2026-04-01T10:30:00Z',
-      updatedAt: '2026-04-01T10:30:00Z'
-    }
-  ];
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Views
-// ══════════════════════════════════════════════════════════════════════════════
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  currentView = name;
-
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + name) || document.getElementById('nav-all');
-  if (navEl) navEl.classList.add('active');
-
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'all') applyFilters();
-}
-
-function toggleSidebarSection(id) {
-  document.getElementById('collapse-' + id).classList.toggle('collapsed');
-  document.getElementById('chevron-' + id).classList.toggle('rotated');
-}
-
-function showAllDecisions() {
-  activeStatusFilter = null;
-  activeCategoryFilter = null;
-  updateSidebar();
-  showView('all');
-}
-
-function goBack() {
-  showView(currentView === 'detail' ? 'all' : currentView);
-  if (activeStatusFilter) filterByStatus(activeStatusFilter);
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Sidebar counts + category chips
-// ══════════════════════════════════════════════════════════════════════════════
-function updateSidebar() {
-  const total = decisions.length;
-  document.getElementById('count-all').textContent = total;
-  ['proposed','accepted','rejected','deprecated','superseded'].forEach(s => {
-    document.getElementById('count-' + s).textContent = decisions.filter(d => d.status === s).length;
-  });
-
-  const cats = [...new Set(decisions.map(d => d.category))].sort();
-  const container = document.getElementById('categoryFilters');
-  container.innerHTML = '';
-  cats.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-chip' + (activeCategoryFilter === cat ? ' active' : '');
-    btn.textContent = cat;
-    btn.title = decisions.filter(d => d.category === cat).length + ' decisions';
-    btn.onclick = () => toggleCategoryFilter(cat);
-    container.appendChild(btn);
-  });
-}
-
-function toggleCategoryFilter(cat) {
-  activeCategoryFilter = activeCategoryFilter === cat ? null : cat;
-  updateSidebar();
-  showView('all');
-  applyFilters();
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Dashboard
-// ══════════════════════════════════════════════════════════════════════════════
-function renderDashboard() {
-  // Stats
-  const statsGrid = document.getElementById('statsGrid');
-  const counts = { all: decisions.length };
-  ['proposed','accepted','rejected','deprecated','superseded'].forEach(s => {
-    counts[s] = decisions.filter(d => d.status === s).length;
-  });
-  statsGrid.innerHTML = [
-    { key: 'all', label: 'Total Decisions' },
-    { key: 'accepted', label: 'Accepted' },
-    { key: 'proposed', label: 'Proposed' },
-    { key: 'rejected', label: 'Rejected' },
-    { key: 'deprecated', label: 'Deprecated' },
-    { key: 'superseded', label: 'Superseded' }
-  ].map(({ key, label }) => `
-    <div class="stat-card ${key}" onclick="${key === 'all' ? "showAllDecisions()" : "showView('all');filterByStatus('" + key + "')"}">
-      <div class="stat-num">${counts[key]}</div>
-      <div class="stat-label">${label}</div>
-    </div>`).join('');
-
-  // Recent decisions
-  const recent = [...decisions].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
-  const recentList = document.getElementById('recentList');
-  document.getElementById('recentLabel').textContent = `(${recent.length} of ${decisions.length})`;
-  if (!recent.length) {
-    recentList.innerHTML = emptyState('No decisions logged yet', 'Click "Log Decision" to add your first design decision.');
-    return;
-  }
-  recentList.innerHTML = recent.map(d => renderCard(d, true)).join('');
-
-  // Timeline
-  const timelineList = document.getElementById('timelineList');
-  const sorted = [...decisions].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,10);
-  timelineList.innerHTML = sorted.map(d => `
-    <div class="timeline-item" onclick="openDetail('${d.id}')">
-      <span class="timeline-dot" style="background:var(${STATUS_COLORS[d.status]})"></span>
-      <div>
-        <div class="card-title">${escHtml(d.title)}</div>
-        <div class="timeline-date">${d.id} · ${formatDate(d.date)} · <span class="badge badge-${d.status}" style="padding:1px 6px;font-size:10px">${STATUS_LABELS[d.status]}</span></div>
-      </div>
-    </div>`).join('') || '<p class="text-muted" style="font-size:13px;padding:10px 0">No activity yet.</p>';
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// List / Filter
-// ══════════════════════════════════════════════════════════════════════════════
-function filterByStatus(status) {
-  activeStatusFilter = status;
-  updateSidebar();
-  const navMap = { null: 'nav-all', proposed: 'nav-proposed', accepted: 'nav-accepted',
-    rejected: 'nav-rejected', deprecated: 'nav-deprecated', superseded: 'nav-superseded' };
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const target = document.getElementById(navMap[status] || 'nav-all');
-  if (target) target.classList.add('active');
-  applyFilters();
-}
-
-function handleSidebarSearch(val) {
-  document.getElementById('mainSearch').value = val;
-  showView('all');
-  filterByStatus(null);
-  applyFilters();
-}
-
-function applyFilters() {
-  const q = (document.getElementById('mainSearch').value || '').toLowerCase().trim();
-  const sort = document.getElementById('sortSelect').value;
-
-  let filtered = decisions.filter(d => {
-    if (activeStatusFilter && d.status !== activeStatusFilter) return false;
-    if (activeCategoryFilter && d.category !== activeCategoryFilter) return false;
-    if (!q) return true;
-    return [d.id, d.title, d.context, d.decision, d.rationale, d.consequences, d.owner, d.category, ...(d.tags||[])]
-      .join(' ').toLowerCase().includes(q);
-  });
-
-  filtered.sort((a,b) => {
-    if (sort === 'date-desc') return new Date(b.createdAt) - new Date(a.createdAt);
-    if (sort === 'date-asc') return new Date(a.createdAt) - new Date(b.createdAt);
-    if (sort === 'title-asc') return a.title.localeCompare(b.title);
-    if (sort === 'id-asc') return a.id.localeCompare(b.id);
-    return 0;
-  });
-
-  const heading = activeStatusFilter
-    ? `${STATUS_LABELS[activeStatusFilter]} Decisions`
-    : activeCategoryFilter
-    ? `${activeCategoryFilter} Decisions`
-    : 'All Decisions';
-  document.getElementById('listHeading').innerHTML = `${heading} <small style="font-weight:400;color:var(--grey-500);font-size:12px">${filtered.length} result${filtered.length!==1?'s':''}</small>`;
-
-  const mainList = document.getElementById('mainList');
-  if (!filtered.length) {
-    mainList.innerHTML = q
-      ? `<div class="no-results">No decisions match "<strong>${escHtml(q)}</strong>"</div>`
-      : emptyState('No decisions here yet', 'Try a different filter or log a new decision.');
-    return;
-  }
-  mainList.innerHTML = filtered.map(d => renderCard(d, false, q)).join('');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Card renderer
-// ══════════════════════════════════════════════════════════════════════════════
-function renderCard(d, compact = false, highlight = '') {
-  const tagsHtml = (d.tags||[]).filter(Boolean).map(t => `<span class="tag">${escHtml(t)}</span>`).join('');
-  const ctx = compact ? truncate(d.context, 100) : truncate(d.context, 160);
-  const ctxHtml = highlight ? highlightText(ctx, highlight) : escHtml(ctx);
-  const titleHtml = highlight ? highlightText(d.title, highlight) : escHtml(d.title);
-  return `
-    <div class="decision-card status-${d.status}" onclick="openDetail('${d.id}')">
-      <div>
-        <div class="card-id">${d.id} · ${escHtml(d.category)} · ${formatDate(d.date)}</div>
-        <div class="card-title">${titleHtml}</div>
-        <div class="card-context">${ctxHtml}</div>
-        <div class="card-meta">
-          <span class="badge badge-${d.status}">${STATUS_ICONS[d.status]} ${STATUS_LABELS[d.status]}</span>
-          ${d.owner ? `<span class="meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${escHtml(d.owner)}</span>` : ''}
-          ${tagsHtml}
-        </div>
-      </div>
-      <div class="card-actions" onclick="event.stopPropagation()">
-        <button class="btn btn-icon btn-ghost btn-sm" title="Edit" onclick="event.stopPropagation();openModal('${d.id}')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="btn btn-icon btn-ghost btn-sm" title="Delete" onclick="event.stopPropagation();confirmDelete('${d.id}')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        </button>
-      </div>
-    </div>`;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Detail View
-// ══════════════════════════════════════════════════════════════════════════════
-function openDetail(id) {
-  const d = decisions.find(x => x.id === id);
-  if (!d) return;
-  currentDetailId = id;
-
-  const tagsHtml = (d.tags||[]).filter(Boolean).map(t => `<span class="tag">${escHtml(t)}</span>`).join('');
-  const relatedIds = (d.related || '').split(',').map(s => s.trim()).filter(Boolean);
-  const relatedHtml = relatedIds.length
-    ? relatedIds.map(rid => `<button class="btn btn-ghost btn-sm" onclick="openDetail('${escHtml(rid)}')" style="font-family:var(--font-mono)">${escHtml(rid)}</button>`).join('')
-    : '<span class="text-muted">None</span>';
-
-  const blocks = [
-    { label: '📋 Context', icon:'', content: d.context, full: true },
-    { label: '✅ Decision', icon:'', content: d.decision, full: true },
-    { label: '💡 Rationale', icon:'', content: d.rationale || '—', full: false },
-    { label: '⚖️ Consequences', icon:'', content: d.consequences || '—', full: false },
-  ];
-
-  document.getElementById('detailContent').innerHTML = `
-    <div class="detail-header status-${d.status}">
-      <div class="detail-id">${d.id}</div>
-      <div class="detail-title">${escHtml(d.title)}</div>
-      <div class="detail-meta">
-        <span class="badge badge-${d.status}" style="font-size:12px;padding:4px 10px">${STATUS_ICONS[d.status]} ${STATUS_LABELS[d.status]}</span>
-        <span class="badge badge-category">${escHtml(d.category)}</span>
-        ${d.owner ? `<span class="meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><strong>${escHtml(d.owner)}</strong></span>` : ''}
-        <span class="meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${formatDate(d.date)}</span>
-        <span class="meta-item" style="color:var(--grey-400);font-size:11px">Updated ${formatRelative(d.updatedAt)}</span>
-        ${tagsHtml}
-      </div>
-    </div>
-    <div class="detail-grid">
-      ${blocks.map(b => `
-        <div class="detail-block ${b.full ? 'full' : ''}">
-          <div class="detail-block-label">${b.label}</div>
-          <div class="detail-block-content">${escHtml(b.content)}</div>
-        </div>`).join('')}
-      <div class="detail-block" style="grid-column:1/-1">
-        <div class="detail-block-label">🔗 Related Decisions</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${relatedHtml}</div>
-      </div>
-    </div>
-    <div style="font-size:11px;color:var(--grey-400);text-align:right;margin-top:4px">
-      Logged ${formatDate(d.createdAt?.split('T')[0])} · Last updated ${formatRelative(d.updatedAt)}
-    </div>`;
-
-  showView('detail');
-}
-
-function editCurrentDetail() { openModal(currentDetailId); }
-function deleteCurrentDetail() { confirmDelete(currentDetailId); }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Modal (Add / Edit)
-// ══════════════════════════════════════════════════════════════════════════════
-function openModal(id = null) {
-  const overlay = document.getElementById('modalOverlay');
-  const isEdit = !!id;
-  document.getElementById('modalTitle').textContent = isEdit ? 'Edit Design Decision' : 'Log New Design Decision';
-  document.getElementById('saveLabel').textContent = isEdit ? 'Save Changes' : 'Log Decision';
-  document.getElementById('editId').value = id || '';
-
-  if (isEdit) {
-    const d = decisions.find(x => x.id === id);
-    if (!d) return;
-    document.getElementById('fTitle').value = d.title;
-    document.getElementById('fStatus').value = d.status;
-    document.getElementById('fCategory').value = d.category;
-    document.getElementById('fOwner').value = d.owner || '';
-    document.getElementById('fDate').value = d.date || '';
-    document.getElementById('fTags').value = (d.tags||[]).join(', ');
-    document.getElementById('fContext').value = d.context || '';
-    document.getElementById('fDecision').value = d.decision || '';
-    document.getElementById('fRationale').value = d.rationale || '';
-    document.getElementById('fConsequences').value = d.consequences || '';
-    document.getElementById('fRelated').value = d.related || '';
-  } else {
-    ['fTitle','fOwner','fDate','fTags','fContext','fDecision','fRationale','fConsequences','fRelated'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('fStatus').value = 'proposed';
-    document.getElementById('fCategory').value = 'Navigation';
-    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
-  }
-  // Update char counts
-  ['fTitle','fContext','fDecision','fRationale','fConsequences'].forEach(fid => {
-    const el = document.getElementById(fid);
-    const countId = fid.replace('f','') + 'Count'; // approximate
-    const countEl = document.getElementById(fid.replace('f','').toLowerCase() + 'Count');
-    if (countEl) { const max = parseInt(el.getAttribute('maxlength')) || 0; countEl.textContent = max - el.value.length; }
-  });
-  overlay.classList.add('open');
-  setTimeout(() => document.getElementById('fTitle').focus(), 120);
-}
-
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-}
-function handleModalOverlayClick(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-}
-
-function saveDecision() {
-  const title = document.getElementById('fTitle').value.trim();
-  const context = document.getElementById('fContext').value.trim();
-  const decision = document.getElementById('fDecision').value.trim();
-
-  if (!title) { showToast('Title is required.', 'error'); document.getElementById('fTitle').focus(); return; }
-  if (!context) { showToast('Context is required.', 'error'); document.getElementById('fContext').focus(); return; }
-  if (!decision) { showToast('Decision is required.', 'error'); document.getElementById('fDecision').focus(); return; }
-
-  const editId = document.getElementById('editId').value;
-  const now = new Date().toISOString();
-  const tags = document.getElementById('fTags').value.split(',').map(t => t.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean);
-
-  if (editId) {
-    const idx = decisions.findIndex(d => d.id === editId);
-    if (idx > -1) {
-      decisions[idx] = { ...decisions[idx],
-        title, status: document.getElementById('fStatus').value,
-        category: document.getElementById('fCategory').value,
-        owner: document.getElementById('fOwner').value.trim(),
-        date: document.getElementById('fDate').value,
-        tags, context, decision,
-        rationale: document.getElementById('fRationale').value.trim(),
-        consequences: document.getElementById('fConsequences').value.trim(),
-        related: document.getElementById('fRelated').value.trim(),
-        updatedAt: now
-      };
-    }
-    showToast(`${editId} updated.`, 'success');
-  } else {
-    const newDecision = {
-      id: nextId(), title,
-      status: document.getElementById('fStatus').value,
-      category: document.getElementById('fCategory').value,
-      owner: document.getElementById('fOwner').value.trim(),
-      date: document.getElementById('fDate').value,
-      tags, context, decision,
-      rationale: document.getElementById('fRationale').value.trim(),
-      consequences: document.getElementById('fConsequences').value.trim(),
-      related: document.getElementById('fRelated').value.trim(),
-      createdAt: now, updatedAt: now
+    const CATEGORY_LABELS = {
+      email:       "Email decisions",
+      field:       "Field decisions",
+      validation:  "Validation decisions",
+      structure:   "Structure decisions",
+      conditional: "Conditional decisions"
     };
-    decisions.unshift(newDecision);
-    showToast(`${newDecision.id} logged successfully.`, 'success');
-  }
 
-  save();
-  closeModal();
-  updateSidebar();
-  if (currentView === 'dashboard') renderDashboard();
-  else if (currentView === 'all') applyFilters();
-  else if (currentView === 'detail' && editId) openDetail(editId);
-}
+    const CATEGORY_ORDER = ["email","field","validation","structure","conditional"];
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Delete
-// ══════════════════════════════════════════════════════════════════════════════
-function confirmDelete(id) {
-  const d = decisions.find(x => x.id === id);
-  if (!d) return;
-  document.getElementById('confirmText').textContent = `"${d.title}" (${d.id}) will be permanently removed from the log.`;
-  document.getElementById('confirmOkBtn').onclick = () => { doDelete(id); closeConfirm(); };
-  document.getElementById('confirmOverlay').classList.add('open');
-}
-function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
-function doDelete(id) {
-  const d = decisions.find(x => x.id === id);
-  decisions = decisions.filter(x => x.id !== id);
-  save();
-  updateSidebar();
-  showToast(`${d?.id} deleted.`, 'info');
-  if (currentView === 'detail') showView('all');
-  else if (currentView === 'dashboard') renderDashboard();
-  else applyFilters();
-}
+    function statusLabel(s) {
+      return s === "review" ? "Under review" : s.charAt(0).toUpperCase() + s.slice(1);
+    }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Export
-// ══════════════════════════════════════════════════════════════════════════════
-function openExport() { document.getElementById('exportOverlay').classList.add('open'); }
-function closeExport() { document.getElementById('exportOverlay').classList.remove('open'); }
+    function categoryLabel(c) {
+      return c.charAt(0).toUpperCase() + c.slice(1);
+    }
 
-function downloadFile(content, filename, type) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], { type }));
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showToast(`Exported ${filename}`, 'success');
-}
+    function cellStatus({ status, note }) {
+      const cls  = { required:"cell-required", excluded:"cell-excluded", conditional:"cell-conditional" };
+      const dots = { required:"background:#0e5f64", excluded:"background:#a42c2c", conditional:"background:#D97706" };
+      const lbl  = { required:"Required", excluded:"Excluded", conditional:"Conditional" };
+      const noteHtml = note ? `<span class="cell-note">${note}</span>` : "";
+      return `<div class="${cls[status]}"><span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;${dots[status]};display:inline-block;"></span><span>${lbl[status]}${noteHtml}</span></div>`;
+    }
 
-function exportJSON() {
-  downloadFile(JSON.stringify(decisions, null, 2), 'alpha-gov-bb-decisions.json', 'application/json');
-}
+    function renderComponents(components) {
+      if (!components || !components.length) return "";
+      const rows = components.map(c => `
+        <tr>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top;"><strong>${c.component}</strong></td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top; font-size:0.85rem; color:#595959;">${c.description}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top;">${cellStatus(c.mda)}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top;">${cellStatus(c.applicant)}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top; font-size:0.82rem; color:#595959;">${c.notes || "—"}</td>
+        </tr>`).join("");
+      return `
+        <div style="display:flex; gap:16px; margin-bottom:10px; font-size:0.82rem; flex-wrap:wrap;">
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600;color:#0e5f64;"><span style="width:8px;height:8px;border-radius:50%;background:#0e5f64;display:inline-block;"></span>Required</span>
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600;color:#a42c2c;"><span style="width:8px;height:8px;border-radius:50%;background:#a42c2c;display:inline-block;"></span>Excluded</span>
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600;color:#D97706;"><span style="width:8px;height:8px;border-radius:50%;background:#D97706;display:inline-block;"></span>Conditional</span>
+        </div>
+        <div style="overflow-x:auto; margin-bottom:1rem;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.875rem; min-width:640px;">
+            <thead>
+              <tr style="background:#00267f; color:#fff;">
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Component</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Description</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">MDA email</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Applicant email</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
 
-function exportMarkdown() {
-  const lines = ['# Design Decision Log — alpha.gov.bb\n', `_Exported ${new Date().toLocaleDateString('en-GB')}_\n`];
-  const sorted = [...decisions].sort((a,b) => a.id.localeCompare(b.id));
-  sorted.forEach(d => {
-    lines.push(`---\n\n## ${d.id}: ${d.title}\n`);
-    lines.push(`**Status:** ${STATUS_LABELS[d.status]}  `);
-    lines.push(`**Category:** ${d.category}  `);
-    if (d.owner) lines.push(`**Owner:** ${d.owner}  `);
-    if (d.date) lines.push(`**Date:** ${d.date}  `);
-    if (d.tags?.length) lines.push(`**Tags:** ${d.tags.join(', ')}\n`);
-    lines.push(`\n### Context\n${d.context}\n`);
-    lines.push(`\n### Decision\n${d.decision}\n`);
-    if (d.rationale) lines.push(`\n### Rationale\n${d.rationale}\n`);
-    if (d.consequences) lines.push(`\n### Consequences\n${d.consequences}\n`);
-    if (d.related) lines.push(`\n### Related Decisions\n${d.related}\n`);
-    lines.push('');
-  });
-  downloadFile(lines.join('\n'), 'alpha-gov-bb-decisions.md', 'text/markdown');
-}
+    function renderVariations(variations) {
+      if (!variations || !variations.length) return "";
+      const blocks = variations.map(v => `
+        <div style="border-left:3px solid #99a8cc; padding:10px 14px; margin-bottom:8px; background:#f8f9fc; border-radius:0 4px 4px 0;">
+          <div style="font-size:0.875rem; font-weight:700; margin-bottom:4px;">${v.title}</div>
+          <div style="font-size:0.875rem; color:#595959;">${v.text}</div>
+        </div>`).join("");
+      return `<div style="margin-bottom:1rem;">${blocks}</div>`;
+    }
 
-function exportCSV() {
-  const headers = ['ID','Title','Status','Category','Owner','Date','Tags','Context','Decision','Rationale','Consequences','Related','Created','Updated'];
-  const rows = decisions.map(d => [
-    d.id, d.title, d.status, d.category, d.owner || '', d.date || '',
-    (d.tags||[]).join('|'), d.context, d.decision,
-    d.rationale || '', d.consequences || '', d.related || '',
-    d.createdAt || '', d.updatedAt || ''
-  ].map(v => `"${String(v).replace(/"/g,'""')}"`));
-  downloadFile([headers.join(','), ...rows.map(r => r.join(','))].join('\n'), 'alpha-gov-bb-decisions.csv', 'text/csv');
-}
+    function renderRelated(related) {
+      if (!related || !related.length) return "";
+      const pills = related.map(id =>
+        `<button onclick="jumpTo('${id}')" style="background:#eaf9f9; color:#0e5f64; font-family:monospace; font-size:0.75rem; font-weight:600; padding:2px 10px; border-radius:999px; border:none; cursor:pointer;">${id}</button>`
+      ).join("");
+      return `<span style="font-size:0.75rem; color:#595959; margin-right:4px;">Related:</span>${pills}`;
+    }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Dropdown
-// ══════════════════════════════════════════════════════════════════════════════
-function toggleDropdown(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
-}
-function closeDropdowns() {
-  document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.dropdown')) closeDropdowns();
-  if (!e.target.closest('.confirm-overlay') && document.getElementById('confirmOverlay').classList.contains('open')
-    && e.target === document.getElementById('confirmOverlay')) closeConfirm();
-});
+    function renderDecision(d) {
+      return `
+        <div class="decision-card" id="card-${d.id}" data-category="${d.category}"
+          style="background:#fff; border:1px solid #e0e4e9; border-radius:4px; margin-bottom:8px; overflow:hidden;">
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Toast
-// ══════════════════════════════════════════════════════════════════════════════
-function showToast(msg, type = 'info') {
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-    ${type === 'success' ? '<polyline points="20 6 9 17 4 12"/>' :
-      type === 'error' ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' :
-      '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
-  </svg>${escHtml(msg)}`;
-  document.getElementById('toastContainer').appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(16px)'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 350); }, 3200);
-}
+          <!-- COLLAPSED HEADER -->
+          <div onclick="toggleCard('${d.id}')"
+            style="display:grid; grid-template-columns:56px 1fr auto auto 32px; align-items:center; gap:12px; padding:14px 16px; cursor:pointer;">
+            <span style="font-family:monospace; font-size:0.7rem; color:#595959; white-space:nowrap;">${d.id}</span>
+            <div style="min-width:0;">
+              <span style="font-size:0.95rem; font-weight:700; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.title}</span>
+              <div style="font-size:0.75rem; color:#595959; margin-top:2px;">${d.appliesTo} · ${d.lastUpdated}</div>
+            </div>
+            <span class="badge badge-${d.category}" style="display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;">${categoryLabel(d.category)}</span>
+            <span class="badge badge-${d.status}" style="display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;">${statusLabel(d.status)}</span>
+            <span class="chevron" style="color:#595959; display:flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Utilities
-// ══════════════════════════════════════════════════════════════════════════════
-function escHtml(s) {
-  if (!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function truncate(s, n) {
-  if (!s) return '';
-  return s.length > n ? s.slice(0, n) + '…' : s;
-}
-function formatDate(d) {
-  if (!d) return '—';
-  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
-  catch(e) { return d; }
-}
-function formatRelative(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso), now = new Date(), diff = (now - d) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
-  if (diff < 2592000) return Math.floor(diff/86400) + 'd ago';
-  return formatDate(iso.split('T')[0]);
-}
-function highlightText(text, q) {
-  if (!q) return escHtml(text);
-  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return escHtml(text).replace(new RegExp(escaped.replace(/[&<>"]/g,'.*'), 'gi'), m => `<mark class="highlight">${m}</mark>`);
-}
-function updateCharCount(fieldId, countId, max) {
-  const el = document.getElementById(fieldId);
-  const countEl = document.getElementById(countId);
-  if (el && countEl) countEl.textContent = max - el.value.length;
-}
-function emptyState(title, desc) {
-  return `<div class="empty-state">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-    <h3>${title}</h3><p>${desc}</p>
-  </div>`;
-}
+          <!-- EXPANDED BODY -->
+          <div class="decision-body" style="padding:0 16px 16px;">
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Keyboard shortcuts
-// ══════════════════════════════════════════════════════════════════════════════
-document.addEventListener('keydown', e => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault();
-    document.getElementById('sidebarSearch').focus();
-    document.getElementById('sidebarSearch').select();
-  }
-  if (e.key === 'Escape') {
-    if (document.getElementById('modalOverlay').classList.contains('open')) closeModal();
-    else if (document.getElementById('confirmOverlay').classList.contains('open')) closeConfirm();
-    else if (document.getElementById('exportOverlay').classList.contains('open')) closeExport();
-  }
-  if ((e.metaKey || e.ctrlKey) && e.key === 'n' && !document.getElementById('modalOverlay').classList.contains('open')) {
-    e.preventDefault();
-    openModal();
-  }
-});
+            <!-- SUMMARY CALLOUT -->
+            <div style="background:#eaf9f9; border-left:4px solid #30c0c8; border-radius:0 4px 4px 0; padding:12px 16px; margin-bottom:16px;">
+              <p style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#0e5f64; margin-bottom:4px;">Summary</p>
+              <p style="font-size:0.9rem; color:#0e5f64;">${d.summary}</p>
+            </div>
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Init
-// ══════════════════════════════════════════════════════════════════════════════
-load();
-updateSidebar();
-renderDashboard();
-</script>
+            <!-- CONTEXT / DECISION / RATIONALE GRID -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #e0e4e9; border-radius:4px; overflow:hidden; margin-bottom:16px;">
+              <div style="padding:12px 14px; border-right:1px solid #e0e4e9;">
+                <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#595959; margin-bottom:6px;">Context</div>
+                <div style="font-size:0.82rem;">${d.context}</div>
+              </div>
+              <div style="padding:12px 14px; border-right:1px solid #e0e4e9;">
+                <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#595959; margin-bottom:6px;">Decision</div>
+                <div style="font-size:0.82rem;">${d.decision}</div>
+              </div>
+              <div style="padding:12px 14px;">
+                <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#595959; margin-bottom:6px;">Rationale</div>
+                <div style="font-size:0.82rem;">${d.rationale}</div>
+              </div>
+            </div>
 
-<!-- Footer -->
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-links">
-      <a class="footer-link" href="#">Home</a>
-      <a class="footer-link" href="#">Terms &amp; Conditions</a>
-      <a class="footer-link" href="#">Careers</a>
-    </div>
-    <div class="footer-brand">
-      <!-- Barbados coat of arms -->
-      <svg class="footer-crest" width="72" height="90" viewBox="0 0 72 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Barbados coat of arms">
-        <!-- Pelican crest on top -->
-        <ellipse cx="36" cy="7" rx="5" ry="4" fill="#c89c2a"/>
-        <ellipse cx="36" cy="4" rx="3" ry="3" fill="#d4a832"/>
-        <path d="M32 7 Q36 12 40 7" fill="#c89c2a"/>
-        <!-- Crest base / helmet suggestion -->
-        <rect x="32" y="10" width="8" height="3" rx="1.5" fill="#c89c2a" opacity="0.6"/>
-        <!-- Shield outline -->
-        <path d="M10 14 H62 V50 Q62 72 36 80 Q10 72 10 50 Z" fill="#1a2855" stroke="#c89c2a" stroke-width="2"/>
-        <!-- Shield inner highlight -->
-        <path d="M14 17 H58 V50 Q58 69 36 77 Q14 69 14 50 Z" fill="#1e3270"/>
-        <!-- Gold vertical divider -->
-        <rect x="33.5" y="14" width="5" height="66" fill="#c89c2a" opacity="0.55"/>
-        <!-- Gold horizontal divider (upper third) -->
-        <rect x="10" y="37" width="52" height="3.5" fill="#c89c2a" opacity="0.45"/>
-        <!-- LEFT UPPER: bearded fig tree -->
-        <rect x="21" y="20" width="3" height="14" rx="1.5" fill="#c89c2a" opacity="0.7"/>
-        <ellipse cx="22" cy="19" rx="7" ry="6" fill="#2d7d78" opacity="0.85"/>
-        <ellipse cx="19" cy="22" rx="4" ry="3" fill="#2d7d78" opacity="0.7"/>
-        <ellipse cx="25" cy="22" rx="4" ry="3" fill="#2d7d78" opacity="0.7"/>
-        <!-- RIGHT UPPER: sugar cane -->
-        <rect x="47" y="18" width="2.5" height="16" rx="1.25" fill="#c89c2a" opacity="0.8"/>
-        <rect x="52" y="18" width="2.5" height="16" rx="1.25" fill="#c89c2a" opacity="0.8"/>
-        <path d="M45 18 Q48 13 51 18" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.8"/>
-        <path d="M50 18 Q53 13 56 18" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.8"/>
-        <!-- LEFT LOWER: pelican bird (simplified) -->
-        <ellipse cx="22" cy="57" rx="5" ry="4" fill="#c89c2a" opacity="0.75"/>
-        <ellipse cx="22" cy="52" rx="3" ry="3.5" fill="#c89c2a" opacity="0.75"/>
-        <path d="M20 52 Q17 50 19 48" stroke="#c89c2a" stroke-width="1.5" fill="none" opacity="0.75"/>
-        <!-- RIGHT LOWER: dolphin (simplified arc) -->
-        <path d="M43 60 Q50 50 56 55 Q52 62 44 65 Z" fill="#c89c2a" opacity="0.65"/>
-        <circle cx="44" cy="61" r="2" fill="#1a2855" opacity="0.5"/>
-        <!-- Centre trident -->
-        <rect x="29" y="42" width="3" height="14" rx="1.5" fill="#c89c2a"/>
-        <rect x="34.5" y="38" width="3" height="18" rx="1.5" fill="#c89c2a"/>
-        <rect x="40" y="42" width="3" height="14" rx="1.5" fill="#c89c2a"/>
-        <rect x="29" y="53" width="14" height="3" rx="1.5" fill="#c89c2a"/>
-        <rect x="34.5" y="56" width="3" height="6" rx="1.5" fill="#c89c2a"/>
-        <!-- Motto scroll -->
-        <rect x="8" y="82" width="56" height="8" rx="2" fill="#c89c2a" opacity="0.3"/>
-        <rect x="10" y="83" width="52" height="6" rx="1.5" fill="none" stroke="#c89c2a" stroke-width="0.75" opacity="0.5"/>
-        <text x="36" y="88" text-anchor="middle" fill="#fff" font-size="5" font-family="sans-serif" letter-spacing="0.6" opacity="0.9">PRIDE AND INDUSTRY</text>
-      </svg>
-      <div class="footer-copyright">&copy; 2026 Government of Barbados</div>
-    </div>
-  </div>
-</footer>
+            ${renderComponents(d.components)}
+            ${renderVariations(d.variations)}
+
+            <!-- FOOTER ROW -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:12px; border-top:1px solid #e0e4e9;">
+              ${renderRelated(d.related)}
+              <span style="margin-left:auto; font-family:monospace; font-size:0.75rem; color:#595959;">${d.lastUpdated} · ${d.updatedBy}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderSections(filter) {
+      const root = document.getElementById("decisions-root");
+      const toc  = document.getElementById("toc");
+      root.innerHTML = "";
+      toc.innerHTML  = "";
+      let total = 0;
+
+      CATEGORY_ORDER.forEach(cat => {
+        const decisions = DECISIONS.filter(d => d.category === cat);
+        if (!decisions.length) return;
+        const visible = filter === "all" || filter === cat;
+
+        const section = document.createElement("div");
+        section.dataset.category = cat;
+        section.style.display = visible ? "" : "none";
+
+        section.innerHTML = `<h2 id="section-${cat}" style="font-size:1.25rem; font-weight:700; margin:2rem 0 0.75rem; color:#00267f;">${CATEGORY_LABELS[cat]}</h2>`;
+        decisions.forEach(d => { section.innerHTML += renderDecision(d); });
+        root.appendChild(section);
+
+        if (visible) {
+          total += decisions.length;
+          const li = document.createElement("li");
+          li.style.marginBottom = "4px";
+          li.innerHTML = `<a href="#section-${cat}" style="color:#0e5f64; font-size:0.9rem; text-decoration:underline;">${CATEGORY_LABELS[cat]}</a>`;
+          toc.appendChild(li);
+        }
+      });
+
+      document.getElementById("filter-count").textContent =
+        `${total} decision${total !== 1 ? "s" : ""}`;
+    }
+
+    function toggleCard(id) {
+      document.getElementById(`card-${id}`).classList.toggle("open");
+    }
+
+    function jumpTo(id) {
+      setFilter("all");
+      setTimeout(() => {
+        const card = document.getElementById(`card-${id}`);
+        if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+      }, 50);
+    }
+
+    function setFilter(filter) {
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        const active = btn.dataset.filter === filter;
+        btn.classList.toggle("active", active);
+        btn.style.background    = active ? "#00267f" : "#fff";
+        btn.style.color         = active ? "#fff"    : "#00267f";
+        btn.style.borderColor   = active ? "#00267f" : "#99a8cc";
+      });
+      renderSections(filter);
+    }
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => setFilter(btn.dataset.filter));
+    });
+
+    renderSections("all");
+  </script>
 </body>
 </html>
