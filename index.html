@@ -80,6 +80,7 @@
     .badge-validation  { background:#F3EDF8; color:#4a235a; }
     .badge-structure   { background:#FEF3E2; color:#B45309; }
     .badge-conditional { background:#FEF2F2; color:#9B1C1C; }
+    .badge-process     { background:#F0FDF4; color:#166534; }
 
     /* ── Badge colours (status) ── */
     .badge-active     { background:#e9f9f3; color:#00654a; }
@@ -173,7 +174,19 @@
       </nav>
 
       <h1 style="font-size:2.25rem; font-weight:700; margin-bottom:0.5rem; line-height:1.15;">Form decision log</h1>
-      <p style="color:#595959; margin-bottom:1.75rem;">Design and field decisions made during the NIS forms programme, with context and rationale.</p>
+      <p style="color:#595959; margin-bottom:1.75rem;">Design and field decisions made across the GovTech Barbados forms programme, covering all MDAs.</p>
+
+      <!-- ACTION BAR -->
+      <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-bottom:1.75rem;">
+        <button onclick="exportCSV()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer; font-weight:500;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export
+        </button>
+        <button onclick="openModal()" style="display:inline-flex; align-items:center; gap:6px; background:#0e5f64; border:none; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#fff; cursor:pointer; font-weight:500;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          New decision
+        </button>
+      </div>
 
       <!-- CONTENTS BOX -->
       <div style="background:#eaf9f9; border:1px solid #ace6e9; border-radius:0.375rem; padding:1.25rem 1.5rem; margin-bottom:2rem;">
@@ -195,14 +208,105 @@
           style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Structure</button>
         <button class="filter-btn" data-filter="conditional"
           style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Conditional</button>
+        <button class="filter-btn" data-filter="process"
+          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Process</button>
         <span id="filter-count" style="margin-left:auto; font-family:monospace; font-size:0.8rem; color:#595959;"></span>
       </div>
 
       <!-- DECISIONS ROOT -->
       <div id="decisions-root"></div>
 
+      <!-- ACTIVITY TIMELINE -->
+      <div style="margin-top:3rem; border-top:2px solid #e0e4e9; padding-top:2rem;">
+        <h2 style="font-size:1.1rem; font-weight:700; color:#00267f; margin-bottom:1.25rem;">Activity timeline</h2>
+        <div id="timeline-root"></div>
+      </div>
+
     </div>
   </main>
+
+  <!-- ══════════════════════════════════
+       NEW DECISION MODAL
+  ══════════════════════════════════ -->
+  <div id="modal-overlay" onclick="closeModal(event)" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto;">
+    <div onclick="event.stopPropagation()" style="background:#fff; border-radius:0.5rem; width:100%; max-width:640px; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+
+      <!-- Modal header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid #e0e4e9;">
+        <h2 style="font-size:1.1rem; font-weight:700; margin:0;">Log a new decision</h2>
+        <button onclick="closeModal()" style="background:none; border:none; cursor:pointer; font-size:1.25rem; color:#595959; line-height:1;">✕</button>
+      </div>
+
+      <!-- Modal form -->
+      <form id="decision-form" onsubmit="submitDecision(event)" style="padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Title *</label>
+            <input id="f-title" required placeholder="Short active statement" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; outline:none;" />
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Applies to</label>
+            <input id="f-applies" placeholder="e.g. All forms" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; outline:none;" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Category *</label>
+            <select id="f-category" required style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; background:#fff; outline:none;">
+              <option value="">Select…</option>
+              <option value="email">Email</option>
+              <option value="field">Field</option>
+              <option value="validation">Validation</option>
+              <option value="structure">Structure</option>
+              <option value="conditional">Conditional</option>
+              <option value="process">Process</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Status *</label>
+            <select id="f-status" required style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; background:#fff; outline:none;">
+              <option value="active">Active</option>
+              <option value="review">Under review</option>
+              <option value="superseded">Superseded</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Author *</label>
+            <input id="f-author" required placeholder="Your name" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; outline:none;" />
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Summary <span style="font-weight:400; text-transform:none;">(plain-language, 1–2 sentences)</span></label>
+          <textarea id="f-summary" rows="2" placeholder="What did you decide and why, in plain English?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Context *</label>
+            <textarea id="f-context" required rows="3" placeholder="What was the situation?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Decision *</label>
+            <textarea id="f-decision" required rows="3" placeholder="What did you decide?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Rationale *</label>
+            <textarea id="f-rationale" required rows="3" placeholder="Why did you make this decision?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+          </div>
+        </div>
+
+        <div id="form-error" style="display:none; color:#a42c2c; font-size:0.85rem; background:#fff0f0; border:1px solid #ffc4c4; border-radius:0.25rem; padding:8px 12px;"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:0.5rem; border-top:1px solid #e0e4e9;">
+          <button type="button" onclick="closeModal()" style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#00267f; cursor:pointer;">Cancel</button>
+          <button type="submit" style="background:#0e5f64; border:none; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#fff; cursor:pointer; font-weight:600;">Save decision</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ══════════════════════════════════
        FOOTER
@@ -220,14 +324,110 @@
     ═══════════════════════════════════════════════════ */
     const DECISIONS = [
       {
+        id: "FD-010",
+        title: "Documenting decisions centrally",
+        summary: "Design principles and decisions must be documented in a central, accessible place — not left only in Slack threads or buried in prototypes. People and tools cannot infer all constraints from prototypes alone.",
+        category: "process",
+        status: "active",
+        appliesTo: "All MDAs",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Gavin",
+        context: "Important design principles and decisions were being made in Slack threads and prototypes but not recorded anywhere accessible to the whole team or future collaborators.",
+        decision: "Document design principles and decisions in a central, easily accessible place rather than only in Slack threads or prototypes.",
+        rationale: "People and tools cannot infer all constraints from prototypes alone. Centralised documentation reduces confusion, prevents duplicated discussion, and keeps the whole team aligned.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-009",
+        title: "MDA email only sent after payment is confirmed",
+        summary: "For forms with a payment step, the notification email to the MDA is not sent until the payment provider confirms the transaction was successful. This prevents MDAs from acting on submissions where payment was never completed.",
+        category: "email",
+        status: "active",
+        appliesTo: "Forms with payment",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Shannon",
+        context: "For forms that require a payment, there was a question about when to send the MDA notification — immediately on form submission, or only after payment succeeds.",
+        decision: "Do not send the MDA email until payment has been successfully completed and confirmed by the third-party payment provider.",
+        rationale: "Avoids notifying MDAs about submissions where the user has not completed payment, keeping MDA notifications aligned with successful, actionable submissions only.",
+        components: null,
+        variations: [],
+        related: ["FD-001"]
+      },
+      {
+        id: "FD-008",
+        title: "Form field labels use sentence case only",
+        summary: "All form field labels use sentence case — never Title Case. Sentence case is easier to read and better for accessibility, particularly for users with cognitive or reading difficulties.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Amy",
+        context: "There was inconsistency in how field labels were capitalised across forms, with some using Title Case and others using sentence case.",
+        decision: "Use sentence case only for all form field labels. Title Case is not permitted.",
+        rationale: "Sentence case improves readability and is better for accessibility, especially for users with cognitive or reading difficulties. It also aligns with GOV.UK and GDS conventions.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-007",
+        title: "Shared lookup tables for common dropdown lists",
+        summary: "Common dropdown options like parishes, countries, titles, and schools are stored in a central lookup table and fetched via API at runtime — no hardcoded lists per form. This keeps option lists consistent across all forms and easy to maintain centrally.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "2 Apr 2026",
+        updatedBy: "Laron",
+        context: "Common dropdown lists (parishes, countries, titles, schools) were at risk of being hardcoded per form, which would cause inconsistency across the platform.",
+        decision: "Use a central lookup table in the database and a small API endpoint so forms fetch shared lists at runtime. No hardcoded option lists per form. Implemented using existing migration and API patterns — no new infrastructure needed.",
+        rationale: "Centralising list data ensures the same options appear consistently across all forms and makes updates easier to manage in one place.",
+        components: null,
+        variations: [],
+        related: ["FD-003"]
+      },
+      {
+        id: "FD-006",
+        title: "Alignment and Kickoff calls serve distinct purposes",
+        summary: "MDA engagement uses two separate call types: an Alignment Call for high-level buy-in with the MDA, and a Kickoff Call with Digital Champions and forms processors for prototype walkthroughs and internal process questions. Mixing the two caused confusion about what to discuss when.",
+        category: "process",
+        status: "active",
+        appliesTo: "All MDAs",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Leann",
+        context: "The prototyping team needed a clear structure for engaging MDAs, but 'alignment' and 'kickoff' were being used inconsistently, leading to wrong people in wrong calls.",
+        decision: "The Alignment Call is the first call the prototyping team has with the MDA — high-level, no prototype walkthrough. The Kickoff Call is with the Digital Champion and forms processors to walk through prototypes one by one. Questions about internal processes belong in the Kickoff Call, not the Alignment Call.",
+        rationale: "Separating high-level alignment from detailed process walkthroughs makes it clearer what to ask when and who should be in each session.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-005",
+        title: "Declaration page comes after check answers",
+        summary: "The declaration screen is placed after the check answers page so users can review and correct their submission before confirming. Placing it before check answers would have users agreeing to something they haven't yet had a chance to review.",
+        category: "structure",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "2 Apr 2026",
+        updatedBy: "Kristin",
+        context: "It was unclear whether the declaration page should appear before or after the check answers page in the form flow.",
+        decision: "The declaration page always appears after the check answers page. Prototypes were updated to reflect this order.",
+        rationale: "Users should first see all their answers together, correct anything if needed, and only then confirm via the declaration. Agreeing before reviewing creates a poor experience and potential accuracy issues.",
+        components: null,
+        variations: [],
+        related: ["FD-004"]
+      },
+      {
         id: "FD-001",
         title: "Email components by recipient type",
         summary: "MDA and applicant confirmation emails carry different content. MDA emails include full PII and submitted data for case management; applicant emails show only a reference number, service name, next steps, and a contact point to avoid unnecessary PII exposure.",
         category: "email",
         status: "active",
         appliesTo: "All forms",
-        lastUpdated: "4 Apr 2025",
-        updatedBy: "Amoge",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Amoge, Leann, Adunni, Gavin, Shannon",
         context: "MDA and applicant emails serve different purposes. MDA emails are internal operational tools; applicant emails are public-facing receipts.",
         decision: "MDA emails include full applicant PII and all submitted data. Applicant emails include only a confirmation number, service name, next steps, and a contact point.",
         rationale: "MDA staff need identifiers to locate submissions in case management systems. Reproducing data in applicant emails creates unnecessary PII exposure risk.",
@@ -312,10 +512,11 @@
       field:       "Field decisions",
       validation:  "Validation decisions",
       structure:   "Structure decisions",
-      conditional: "Conditional decisions"
+      conditional: "Conditional decisions",
+      process:     "Process decisions"
     };
 
-    const CATEGORY_ORDER = ["email","field","validation","structure","conditional"];
+    const CATEGORY_ORDER = ["email","field","validation","structure","conditional","process"];
 
     function statusLabel(s) {
       return s === "review" ? "Under review" : s.charAt(0).toUpperCase() + s.slice(1);
@@ -501,6 +702,148 @@
     });
 
     renderSections("all");
+    renderTimeline();
+
+    /* ─────────────────────────────────────────
+       ACTIVITY TIMELINE
+    ───────────────────────────────────────── */
+    function renderTimeline() {
+      const root = document.getElementById("timeline-root");
+      if (!root) return;
+
+      // Sort decisions newest-first (parse "4 Apr 2025" style dates)
+      const sorted = [...DECISIONS].sort((a, b) => {
+        return new Date(b.lastUpdated) - new Date(a.lastUpdated);
+      });
+
+      const statusDot = { active:"#0e5f64", review:"#D97706", superseded:"#6B7280" };
+      const statusLabel = { active:"Active", review:"Under review", superseded:"Superseded" };
+
+      root.innerHTML = sorted.map(d => `
+        <div style="display:flex; gap:1rem; padding-bottom:1.25rem; margin-bottom:1.25rem; border-bottom:1px solid #e0e4e9; align-items:flex-start;">
+          <div style="margin-top:5px; flex-shrink:0;">
+            <span style="width:10px; height:10px; border-radius:50%; background:${statusDot[d.status] || '#99a8cc'}; display:inline-block;"></span>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.75rem; color:#595959; margin-bottom:2px; font-family:monospace;">
+              ${d.id} · ${d.appliesTo} · ${d.lastUpdated}
+            </div>
+            <div style="font-weight:600; font-size:0.9rem; margin-bottom:3px; cursor:pointer; color:#0e5f64; text-decoration:underline;" onclick="jumpTo('${d.id}')">${d.title}</div>
+            <span style="display:inline-block; padding:1px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
+              background:${d.status==='active'?'#e9f9f3':d.status==='review'?'#FEF3E2':'#F3F4F6'};
+              color:${d.status==='active'?'#00654a':d.status==='review'?'#92400E':'#6B7280'};">
+              ${statusLabel[d.status]}
+            </span>
+          </div>
+          <div style="font-size:0.75rem; color:#595959; white-space:nowrap; flex-shrink:0;">${d.updatedBy}</div>
+        </div>
+      `).join("");
+    }
+
+    /* ─────────────────────────────────────────
+       NEW DECISION MODAL
+    ───────────────────────────────────────── */
+    function openModal() {
+      const overlay = document.getElementById("modal-overlay");
+      overlay.style.display = "flex";
+      document.body.style.overflow = "hidden";
+      document.getElementById("f-title").focus();
+    }
+
+    function closeModal(e) {
+      if (e && e.target !== document.getElementById("modal-overlay")) return;
+      document.getElementById("modal-overlay").style.display = "none";
+      document.body.style.overflow = "";
+      document.getElementById("decision-form").reset();
+      document.getElementById("form-error").style.display = "none";
+    }
+
+    // Close on Escape
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        document.getElementById("modal-overlay").style.display = "none";
+        document.body.style.overflow = "";
+      }
+    });
+
+    function nextId() {
+      const nums = DECISIONS.map(d => parseInt(d.id.replace("FD-", ""), 10));
+      return "FD-" + String(Math.max(...nums) + 1).padStart(3, "0");
+    }
+
+    function todayLabel() {
+      return new Date().toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+    }
+
+    function submitDecision(e) {
+      e.preventDefault();
+      const err = document.getElementById("form-error");
+      err.style.display = "none";
+
+      const title    = document.getElementById("f-title").value.trim();
+      const category = document.getElementById("f-category").value;
+      const status   = document.getElementById("f-status").value;
+      const author   = document.getElementById("f-author").value.trim();
+      const context  = document.getElementById("f-context").value.trim();
+      const decision = document.getElementById("f-decision").value.trim();
+      const rationale= document.getElementById("f-rationale").value.trim();
+      const summary  = document.getElementById("f-summary").value.trim();
+      const applies  = document.getElementById("f-applies").value.trim() || "All forms";
+
+      if (!title || !category || !status || !author || !context || !decision || !rationale) {
+        err.textContent = "Please fill in all required fields (marked *).";
+        err.style.display = "block";
+        return;
+      }
+
+      const newDecision = {
+        id: nextId(),
+        title, summary: summary || `${title}.`,
+        category, status,
+        appliesTo: applies,
+        lastUpdated: todayLabel(),
+        updatedBy: author,
+        context, decision, rationale,
+        components: null,
+        variations: [],
+        related: []
+      };
+
+      DECISIONS.unshift(newDecision);
+
+      // Close modal and refresh
+      document.getElementById("modal-overlay").style.display = "none";
+      document.body.style.overflow = "";
+      document.getElementById("decision-form").reset();
+
+      // Re-render with current active filter
+      const activeFilter = document.querySelector(".filter-btn.active");
+      renderSections(activeFilter ? activeFilter.dataset.filter : "all");
+      renderTimeline();
+
+      // Open and scroll to the new card
+      setTimeout(() => {
+        const card = document.getElementById("card-" + newDecision.id);
+        if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+      }, 80);
+    }
+
+    /* ─────────────────────────────────────────
+       EXPORT (CSV)
+    ───────────────────────────────────────── */
+    function exportCSV() {
+      const cols = ["id","title","category","status","appliesTo","lastUpdated","updatedBy","summary","context","decision","rationale"];
+      const header = cols.join(",");
+      const escape = v => `"${String(v || "").replace(/"/g,'""')}"`;
+      const rows = DECISIONS.map(d => cols.map(c => escape(d[c])).join(","));
+      const csv = [header, ...rows].join("\r\n");
+      const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "form-decision-log.csv";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
