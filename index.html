@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,6 +106,18 @@
 
     /* ── Filter active ── */
     .filter-btn.active { background:#00267f; color:#fff; border-color:#00267f; }
+
+    /* ── Collapsible section headings ── */
+    .section-heading { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; margin:2rem 0 0.75rem; padding:0.25rem 0; }
+    .section-heading h2 { margin:0; transition:color 0.15s; }
+    .section-heading:hover h2 { color:#0e5f64; }
+    .section-chevron { transition:transform 0.2s; color:#595959; flex-shrink:0; transform:rotate(90deg); }
+    .section-collapsed .section-chevron { transform:rotate(0deg); }
+    .section-collapsed .section-decisions { display:none; }
+
+    /* ── Export dropdown menu ── */
+    .export-menu-item { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer; white-space:nowrap; }
+    .export-menu-item:hover { background:#e5e9f2; }
   </style>
 </head>
 <body style="font-family:Figtree,-apple-system,system-ui,'Segoe UI',Roboto,sans-serif; font-size:1rem; line-height:1.5; color:#000; background:#fff; min-height:100vh; display:flex; flex-direction:column; margin:0;">
@@ -180,48 +193,64 @@
 
       <!-- ACTION BAR -->
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-bottom:1.75rem;">
-        <button onclick="exportCSV()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer; font-weight:500;">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Export
-        </button>
+        <div style="position:relative;">
+          <button id="export-btn" onclick="toggleExportMenu()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer; font-weight:500;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Export
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div id="export-menu" style="display:none; position:absolute; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #99a8cc; border-radius:0.375rem; box-shadow:0 4px 14px rgba(0,0,0,0.12); z-index:200; overflow:hidden;">
+            <button class="export-menu-item" onclick="exportCSV(); toggleExportMenu()">CSV (.csv)</button>
+            <button class="export-menu-item" onclick="exportJSON(); toggleExportMenu()">JSON (.json)</button>
+            <button class="export-menu-item" onclick="exportMarkdown(); toggleExportMenu()">Markdown (.md)</button>
+          </div>
+        </div>
         <button onclick="openModal()" style="display:inline-flex; align-items:center; gap:6px; background:#0e5f64; border:none; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#fff; cursor:pointer; font-weight:500;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           New decision
         </button>
       </div>
 
-      <!-- CONTENTS BOX -->
-      <div style="background:#eaf9f9; border:1px solid #ace6e9; border-radius:0.375rem; padding:1.25rem 1.5rem; margin-bottom:2rem;">
-        <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#595959; margin-bottom:0.6rem;">Contents</p>
-        <ol id="toc" style="padding-left:1.25rem;"></ol>
-      </div>
+      <!-- STATUS OVERVIEW -->
+      <div id="stats-root" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1.5rem;"></div>
 
-      <!-- FILTER BAR -->
-      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:1.75rem;">
-        <button class="filter-btn active" data-filter="all"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">All</button>
-        <button class="filter-btn" data-filter="email"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Email</button>
-        <button class="filter-btn" data-filter="field"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Field</button>
-        <button class="filter-btn" data-filter="validation"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Validation</button>
-        <button class="filter-btn" data-filter="structure"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Structure</button>
-        <button class="filter-btn" data-filter="conditional"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Conditional</button>
-        <button class="filter-btn" data-filter="process"
-          style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Process</button>
-        <span id="filter-count" style="margin-left:auto; font-family:monospace; font-size:0.8rem; color:#595959;"></span>
-      </div>
+      <!-- TWO-COLUMN LAYOUT: decisions (left) + timeline (right) -->
+      <div style="display:grid; grid-template-columns:1fr 300px; gap:2rem; align-items:start;">
 
-      <!-- DECISIONS ROOT -->
-      <div id="decisions-root"></div>
+        <!-- ── LEFT COLUMN ── -->
+        <div>
+          <!-- Filter bar -->
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:1.25rem;">
+            <button class="filter-btn active" data-filter="all"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">All</button>
+            <button class="filter-btn" data-filter="email"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Email</button>
+            <button class="filter-btn" data-filter="field"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Field</button>
+            <button class="filter-btn" data-filter="validation"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Validation</button>
+            <button class="filter-btn" data-filter="structure"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Structure</button>
+            <button class="filter-btn" data-filter="conditional"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Conditional</button>
+            <button class="filter-btn" data-filter="process"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Process</button>
+          </div>
+          <!-- Recent decisions heading -->
+          <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:1rem;">
+            <h2 style="font-size:1.1rem; font-weight:700; color:#00267f; margin:0;">Recent decisions</h2>
+            <span id="filter-count" style="font-size:0.82rem; color:#595959; font-family:monospace;"></span>
+          </div>
+          <!-- Decision sections -->
+          <div id="decisions-root"></div>
+        </div>
 
-      <!-- ACTIVITY TIMELINE -->
-      <div style="margin-top:3rem; border-top:2px solid #e0e4e9; padding-top:2rem;">
-        <h2 style="font-size:1.1rem; font-weight:700; color:#00267f; margin-bottom:1.25rem;">Activity timeline</h2>
-        <div id="timeline-root"></div>
+        <!-- ── RIGHT COLUMN: activity timeline, sticky ── -->
+        <div style="position:sticky; top:1.5rem;">
+          <h2 style="font-size:1.1rem; font-weight:700; color:#00267f; margin:0 0 1rem; padding-bottom:0.6rem; border-bottom:2px solid #e0e4e9;">Activity timeline</h2>
+          <div id="timeline-root" style="max-height:78vh; overflow-y:auto;"></div>
+        </div>
+
       </div>
 
     </div>
@@ -235,7 +264,7 @@
 
       <!-- Modal header -->
       <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid #e0e4e9;">
-        <h2 style="font-size:1.1rem; font-weight:700; margin:0;">Log a new decision</h2>
+        <h2 id="modal-title" style="font-size:1.1rem; font-weight:700; margin:0;">Log a new decision</h2>
         <button onclick="closeModal()" style="background:none; border:none; cursor:pointer; font-size:1.25rem; color:#595959; line-height:1;">✕</button>
       </div>
 
@@ -304,7 +333,7 @@
 
         <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:0.5rem; border-top:1px solid #e0e4e9;">
           <button type="button" onclick="closeModal()" style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#00267f; cursor:pointer;">Cancel</button>
-          <button type="submit" style="background:#0e5f64; border:none; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#fff; cursor:pointer; font-weight:600;">Save decision</button>
+          <button id="modal-submit-btn" type="submit" style="background:#0e5f64; border:none; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#fff; cursor:pointer; font-weight:600;">Save decision</button>
         </div>
       </form>
     </div>
@@ -335,6 +364,25 @@
 
     // Live decisions array — populated from Supabase or seed data on load
     let DECISIONS = [];
+
+    // Track which section categories are currently collapsed
+    const collapsedSections = new Set();
+    function toggleSection(cat) {
+      if (collapsedSections.has(cat)) { collapsedSections.delete(cat); }
+      else { collapsedSections.add(cat); }
+      renderSections(getActiveFilter());
+    }
+
+    // Status filter (null = show all statuses)
+    let currentStatusFilter = null;
+    function setStatusFilter(status) {
+      currentStatusFilter = (currentStatusFilter === status) ? null : status;
+      setFilter("all"); // always reset category to "all" for clarity
+    }
+
+    // Edit mode state
+    let currentEditId = null;
+    const editedIds   = new Set(); // decisions edited this session
 
     /* ═══════════════════════════════════════════════════
        SEED DATA
@@ -603,6 +651,7 @@
         DECISIONS = [...SEED_DECISIONS];
         renderSections(getActiveFilter());
         renderTimeline();
+        renderStats();
         return;
       }
 
@@ -622,6 +671,7 @@
         DECISIONS = data.map(dbToJs);
         renderSections(getActiveFilter());
         renderTimeline();
+        renderStats();
         showBanner("✓ Connected to Supabase", "green");
       } catch (err) {
         console.error("Supabase error:", err);
@@ -629,8 +679,41 @@
         DECISIONS = [...SEED_DECISIONS];
         renderSections(getActiveFilter());
         renderTimeline();
+        renderStats();
         showBanner("⚠ Database unavailable — showing local data", "red");
       }
+    }
+
+    /* ─────────────────────────────────────────
+       STATS — status overview cards
+    ───────────────────────────────────────── */
+    function renderStats() {
+      const root = document.getElementById("stats-root");
+      if (!root) return;
+      const total      = DECISIONS.length;
+      const active     = DECISIONS.filter(d => d.status === "active").length;
+      const review     = DECISIONS.filter(d => d.status === "review").length;
+      const superseded = DECISIONS.filter(d => d.status === "superseded").length;
+
+      // card(label, count, bg, color, border, filterKey)
+      const card = (label, count, bg, color, border, key) => {
+        const isOn = currentStatusFilter === key;
+        const cardBg  = isOn ? color   : bg;
+        const cardTxt = isOn ? "#fff"  : color;
+        const cardBdr = isOn ? color   : border;
+        const cursor  = key ? "pointer" : "default";
+        const onclick = key ? `onclick="setStatusFilter('${key}')"` : `onclick="setStatusFilter(null)"`;
+        return `<div ${onclick} style="background:${cardBg}; border:2px solid ${cardBdr}; border-radius:6px; padding:10px 18px; min-width:90px; text-align:center; flex:1; max-width:140px; cursor:${cursor}; transition:all 0.15s; user-select:none;">
+          <div style="font-size:1.6rem; font-weight:700; color:${cardTxt}; line-height:1.1;">${count}</div>
+          <div style="font-size:0.72rem; color:${cardTxt}; margin-top:3px; font-weight:500;">${label}</div>
+        </div>`;
+      };
+
+      root.innerHTML =
+        card("Total",        total,      "#e5e9f2", "#00267f", "#99a8cc", null) +
+        card("Active",       active,     "#e9f9f3", "#00654a", "#a5e5ce", "active") +
+        card("Under review", review,     "#FEF3E2", "#92400E", "#FDE68A", "review") +
+        card("Superseded",   superseded, "#F3F4F6", "#6B7280", "#D1D5DB", "superseded");
     }
 
     const CATEGORY_LABELS = {
@@ -762,6 +845,10 @@
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:12px; border-top:1px solid #e0e4e9;">
               ${renderRelated(d.related)}
               <span style="margin-left:auto; font-family:monospace; font-size:0.75rem; color:#595959;">${d.lastUpdated} · ${d.updatedBy}</span>
+              <button onclick="editDecision('${d.id}'); event.stopPropagation();"
+                style="background:#fff; border:1px solid #99a8cc; border-radius:3px; padding:3px 12px; font-family:Figtree,sans-serif; font-size:0.75rem; color:#595959; cursor:pointer; flex-shrink:0;">
+                ✏ Edit
+              </button>
             </div>
           </div>
         </div>`;
@@ -769,35 +856,43 @@
 
     function renderSections(filter) {
       const root = document.getElementById("decisions-root");
-      const toc  = document.getElementById("toc");
       root.innerHTML = "";
-      toc.innerHTML  = "";
       let total = 0;
 
       CATEGORY_ORDER.forEach(cat => {
-        const decisions = DECISIONS.filter(d => d.category === cat);
-        if (!decisions.length) return;
-        const visible = filter === "all" || filter === cat;
+        const allInCat = DECISIONS.filter(d => d.category === cat);
+        if (!allInCat.length) return;
+        // Apply status filter if set
+        const decisions = currentStatusFilter
+          ? allInCat.filter(d => d.status === currentStatusFilter)
+          : allInCat;
+        const catVisible = filter === "all" || filter === cat;
+        const visible    = catVisible && decisions.length > 0;
 
         const section = document.createElement("div");
         section.dataset.category = cat;
         section.style.display = visible ? "" : "none";
+        if (collapsedSections.has(cat)) section.classList.add("section-collapsed");
 
-        section.innerHTML = `<h2 id="section-${cat}" style="font-size:1.25rem; font-weight:700; margin:2rem 0 0.75rem; color:#00267f;">${CATEGORY_LABELS[cat]}</h2>`;
-        decisions.forEach(d => { section.innerHTML += renderDecision(d); });
+        const decisionsHtml = decisions.map(d => renderDecision(d)).join("");
+        section.innerHTML = `
+          <div class="section-heading" onclick="toggleSection('${cat}')">
+            <span class="section-chevron">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <h2 id="section-${cat}" style="font-size:1.15rem; font-weight:700; color:#00267f; margin:0;">${CATEGORY_LABELS[cat]}</h2>
+            <span style="font-size:0.75rem; color:#595959; font-family:monospace; margin-left:4px;">${decisions.length}${allInCat.length !== decisions.length ? ' / ' + allInCat.length : ''}</span>
+          </div>
+          <div class="section-decisions">${decisionsHtml}</div>`;
         root.appendChild(section);
 
         if (visible) {
           total += decisions.length;
-          const li = document.createElement("li");
-          li.style.marginBottom = "4px";
-          li.innerHTML = `<a href="#section-${cat}" style="color:#0e5f64; font-size:0.9rem; text-decoration:underline;">${CATEGORY_LABELS[cat]}</a>`;
-          toc.appendChild(li);
         }
       });
 
-      document.getElementById("filter-count").textContent =
-        `${total} decision${total !== 1 ? "s" : ""}`;
+      const countEl = document.getElementById("filter-count");
+      if (countEl) countEl.textContent = `(${total} of ${DECISIONS.length})`;
     }
 
     function toggleCard(id) {
@@ -821,10 +916,14 @@
         btn.style.borderColor   = active ? "#00267f" : "#99a8cc";
       });
       renderSections(filter);
+      renderStats();
     }
 
     document.querySelectorAll(".filter-btn").forEach(btn => {
-      btn.addEventListener("click", () => setFilter(btn.dataset.filter));
+      btn.addEventListener("click", () => {
+        currentStatusFilter = null; // clear status filter when using category buttons
+        setFilter(btn.dataset.filter);
+      });
     });
 
     loadDecisions();
@@ -844,25 +943,32 @@
       const statusDot = { active:"#0e5f64", review:"#D97706", superseded:"#6B7280" };
       const statusLabel = { active:"Active", review:"Under review", superseded:"Superseded" };
 
-      root.innerHTML = sorted.map(d => `
-        <div style="display:flex; gap:1rem; padding-bottom:1.25rem; margin-bottom:1.25rem; border-bottom:1px solid #e0e4e9; align-items:flex-start;">
-          <div style="margin-top:5px; flex-shrink:0;">
-            <span style="width:10px; height:10px; border-radius:50%; background:${statusDot[d.status] || '#99a8cc'}; display:inline-block;"></span>
-          </div>
+      root.innerHTML = sorted.map(d => {
+        const wasEdited = editedIds.has(d.id);
+        const editedBadge = wasEdited
+          ? `<span style="display:inline-block; padding:1px 7px; border-radius:999px; font-size:0.68rem; font-weight:600; background:#e5e9f2; color:#00267f;">edited</span>`
+          : "";
+        // Truncate long author names
+        const author = d.updatedBy || "";
+        const authorDisplay = author.length > 28 ? author.slice(0, 26) + "…" : author;
+        return `
+        <div style="display:flex; gap:10px; padding-bottom:1rem; margin-bottom:1rem; border-bottom:1px solid #f0f1f3; align-items:flex-start;">
+          <span style="width:9px; height:9px; border-radius:50%; background:${statusDot[d.status] || '#99a8cc'}; display:inline-block; flex-shrink:0; margin-top:5px;"></span>
           <div style="flex:1; min-width:0;">
-            <div style="font-size:0.75rem; color:#595959; margin-bottom:2px; font-family:monospace;">
-              ${d.id} · ${d.appliesTo} · ${d.lastUpdated}
+            <div style="font-size:0.7rem; color:#9ca3af; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${d.id} · ${d.lastUpdated}
             </div>
-            <div style="font-weight:600; font-size:0.9rem; margin-bottom:3px; cursor:pointer; color:#0e5f64; text-decoration:underline;" onclick="jumpTo('${d.id}')">${d.title}</div>
-            <span style="display:inline-block; padding:1px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
-              background:${d.status==='active'?'#e9f9f3':d.status==='review'?'#FEF3E2':'#F3F4F6'};
-              color:${d.status==='active'?'#00654a':d.status==='review'?'#92400E':'#6B7280'};">
-              ${statusLabel[d.status]}
-            </span>
+            <div style="font-weight:600; font-size:0.875rem; margin-bottom:4px; line-height:1.3; color:#0e5f64; cursor:pointer; text-decoration:underline;" onclick="jumpTo('${d.id}')">${d.title}</div>
+            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+              <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.7rem; font-weight:600;
+                background:${d.status==='active'?'#e9f9f3':d.status==='review'?'#FEF3E2':'#F3F4F6'};
+                color:${d.status==='active'?'#00654a':d.status==='review'?'#92400E':'#6B7280'};">${statusLabel[d.status]}</span>
+              ${editedBadge}
+              <span style="font-size:0.7rem; color:#9ca3af;" title="${author}">${authorDisplay}</span>
+            </div>
           </div>
-          <div style="font-size:0.75rem; color:#595959; white-space:nowrap; flex-shrink:0;">${d.updatedBy}</div>
-        </div>
-      `).join("");
+        </div>`;
+      }).join("");
     }
 
     /* ─────────────────────────────────────────
@@ -875,12 +981,38 @@
       document.getElementById("f-title").focus();
     }
 
+    function resetModal() {
+      currentEditId = null;
+      document.getElementById("modal-title").textContent      = "Log a new decision";
+      document.getElementById("modal-submit-btn").textContent = "Save decision";
+      document.getElementById("decision-form").reset();
+      document.getElementById("form-error").style.display = "none";
+    }
+
     function closeModal(e) {
       if (e && e.target !== document.getElementById("modal-overlay")) return;
       document.getElementById("modal-overlay").style.display = "none";
       document.body.style.overflow = "";
-      document.getElementById("decision-form").reset();
+      resetModal();
+    }
+
+    function editDecision(id) {
+      const d = DECISIONS.find(dec => dec.id === id);
+      if (!d) return;
+      currentEditId = id;
+      document.getElementById("modal-title").textContent      = `Edit decision — ${d.id}`;
+      document.getElementById("modal-submit-btn").textContent = "Update decision";
+      document.getElementById("f-title").value    = d.title    || "";
+      document.getElementById("f-category").value = d.category || "";
+      document.getElementById("f-status").value   = d.status   || "active";
+      document.getElementById("f-author").value   = d.updatedBy|| "";
+      document.getElementById("f-context").value  = d.context  || "";
+      document.getElementById("f-decision").value = d.decision || "";
+      document.getElementById("f-rationale").value= d.rationale|| "";
+      document.getElementById("f-summary").value  = d.summary  || "";
+      document.getElementById("f-applies").value  = d.appliesTo|| "";
       document.getElementById("form-error").style.display = "none";
+      openModal();
     }
 
     // Close on Escape
@@ -888,6 +1020,7 @@
       if (e.key === "Escape") {
         document.getElementById("modal-overlay").style.display = "none";
         document.body.style.overflow = "";
+        resetModal();
       }
     });
 
@@ -918,59 +1051,112 @@
       if (!title || !category || !status || !author || !context || !decision || !rationale) {
         err.textContent = "Please fill in all required fields (marked *).";
         err.style.display = "block";
+        err.scrollIntoView({ behavior:"smooth", block:"nearest" });
         return;
       }
 
-      const newDecision = {
-        id: nextId(),
-        title, summary: summary || `${title}.`,
-        category, status,
-        appliesTo: applies,
-        lastUpdated: todayLabel(),
-        updatedBy: author,
-        context, decision, rationale,
-        components: null,
-        variations: [],
-        related: []
-      };
+      const saveBtn = e.target.querySelector('[type="submit"]');
 
-      // Save to Supabase if configured
-      if (IS_CONFIGURED) {
-        const saveBtn = e.target.querySelector('[type="submit"]');
-        saveBtn.textContent = "Saving…";
-        saveBtn.disabled = true;
-        const { error: dbErr } = await db.from('decisions').insert([jsToDb(newDecision)]);
-        saveBtn.textContent = "Save decision";
-        saveBtn.disabled = false;
-        if (dbErr) {
-          err.textContent = "Could not save to database: " + dbErr.message;
-          err.style.display = "block";
-          return;
+      if (currentEditId) {
+        // ── UPDATE MODE ────────────────────────────────────────
+        const idx = DECISIONS.findIndex(d => d.id === currentEditId);
+        if (idx === -1) return;
+        const orig = DECISIONS[idx];
+        const updated = {
+          ...orig,
+          title, summary: summary || orig.summary,
+          category, status,
+          appliesTo: applies,
+          lastUpdated: todayLabel(),
+          updatedBy: author,
+          context, decision, rationale
+        };
+
+        if (IS_CONFIGURED) {
+          saveBtn.textContent = "Saving…";
+          saveBtn.disabled = true;
+          const { error: dbErr } = await db.from('decisions').update(jsToDb(updated)).eq('id', currentEditId);
+          saveBtn.textContent = "Update decision";
+          saveBtn.disabled = false;
+          if (dbErr) {
+            // Warn but still update locally — most common cause is a missing
+            // UPDATE policy in Supabase RLS. Run this SQL in your Supabase
+            // SQL editor to fix:
+            //   create policy "Allow public update" on decisions
+            //   for update using (true) with check (true);
+            showBanner("⚠ DB update failed — changes saved locally only. Check RLS policy.", "red");
+          } else {
+            showBanner("✓ Decision updated", "green");
+          }
         }
-        showBanner("✓ Decision saved to Supabase", "green");
+
+        DECISIONS[idx] = updated;
+        editedIds.add(currentEditId);
+        const scrollTarget = currentEditId;
+
+        document.getElementById("modal-overlay").style.display = "none";
+        document.body.style.overflow = "";
+        resetModal();
+
+        const activeFilter = document.querySelector(".filter-btn.active");
+        renderSections(activeFilter ? activeFilter.dataset.filter : "all");
+        renderTimeline();
+        renderStats();
+
+        setTimeout(() => {
+          const card = document.getElementById("card-" + scrollTarget);
+          if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+        }, 80);
+
+      } else {
+        // ── INSERT MODE ────────────────────────────────────────
+        const newDecision = {
+          id: nextId(),
+          title, summary: summary || `${title}.`,
+          category, status,
+          appliesTo: applies,
+          lastUpdated: todayLabel(),
+          updatedBy: author,
+          context, decision, rationale,
+          components: null,
+          variations: [],
+          related: []
+        };
+
+        if (IS_CONFIGURED) {
+          saveBtn.textContent = "Saving…";
+          saveBtn.disabled = true;
+          const { error: dbErr } = await db.from('decisions').insert([jsToDb(newDecision)]);
+          saveBtn.textContent = "Save decision";
+          saveBtn.disabled = false;
+          if (dbErr) {
+            err.textContent = "Could not save to database: " + dbErr.message;
+            err.style.display = "block";
+            return;
+          }
+          showBanner("✓ Decision saved to Supabase", "green");
+        }
+
+        DECISIONS.unshift(newDecision);
+
+        document.getElementById("modal-overlay").style.display = "none";
+        document.body.style.overflow = "";
+        resetModal();
+
+        const activeFilter = document.querySelector(".filter-btn.active");
+        renderSections(activeFilter ? activeFilter.dataset.filter : "all");
+        renderTimeline();
+        renderStats();
+
+        setTimeout(() => {
+          const card = document.getElementById("card-" + newDecision.id);
+          if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+        }, 80);
       }
-
-      DECISIONS.unshift(newDecision);
-
-      // Close modal and refresh
-      document.getElementById("modal-overlay").style.display = "none";
-      document.body.style.overflow = "";
-      document.getElementById("decision-form").reset();
-
-      // Re-render with current active filter
-      const activeFilter = document.querySelector(".filter-btn.active");
-      renderSections(activeFilter ? activeFilter.dataset.filter : "all");
-      renderTimeline();
-
-      // Open and scroll to the new card
-      setTimeout(() => {
-        const card = document.getElementById("card-" + newDecision.id);
-        if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
-      }, 80);
     }
 
     /* ─────────────────────────────────────────
-       EXPORT (CSV)
+       EXPORT — CSV / JSON / Markdown
     ───────────────────────────────────────── */
     function exportCSV() {
       const cols = ["id","title","category","status","appliesTo","lastUpdated","updatedBy","summary","context","decision","rationale"];
@@ -985,6 +1171,59 @@
       document.body.appendChild(a); a.click();
       document.body.removeChild(a); URL.revokeObjectURL(url);
     }
+
+    function exportJSON() {
+      const json = JSON.stringify(DECISIONS, null, 2);
+      const blob = new Blob([json], { type:"application/json;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "form-decision-log.json";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function exportMarkdown() {
+      const lines = ["# Form decision log — GovTech Barbados\n"];
+      CATEGORY_ORDER.forEach(cat => {
+        const catDecisions = DECISIONS.filter(d => d.category === cat);
+        if (!catDecisions.length) return;
+        lines.push(`\n## ${CATEGORY_LABELS[cat]}\n`);
+        catDecisions.forEach(d => {
+          lines.push(`### ${d.id} — ${d.title}`);
+          lines.push(`**Status:** ${statusLabel(d.status)}  `);
+          lines.push(`**Applies to:** ${d.appliesTo || "—"}  `);
+          lines.push(`**Updated:** ${d.lastUpdated} by ${d.updatedBy}\n`);
+          if (d.summary) lines.push(`> ${d.summary}\n`);
+          lines.push(`**Context:** ${d.context}\n`);
+          lines.push(`**Decision:** ${d.decision}\n`);
+          lines.push(`**Rationale:** ${d.rationale}\n`);
+          lines.push("---\n");
+        });
+      });
+      const md = lines.join("\n");
+      const blob = new Blob([md], { type:"text/markdown;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "form-decision-log.md";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function toggleExportMenu() {
+      const menu = document.getElementById("export-menu");
+      if (!menu) return;
+      menu.style.display = menu.style.display === "none" ? "block" : "none";
+    }
+
+    // Close export menu when clicking outside the button/menu
+    document.addEventListener("click", e => {
+      const menu = document.getElementById("export-menu");
+      const btn  = document.getElementById("export-btn");
+      if (!menu || !btn) return;
+      if (!btn.parentElement.contains(e.target)) {
+        menu.style.display = "none";
+      }
+    });
   </script>
 </body>
 </html>
