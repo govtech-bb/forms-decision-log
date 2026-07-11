@@ -1,0 +1,1478 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form decision log — GovTech Barbados</title>
+
+  <!-- Figtree (official alpha.gov.bb font) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&display=swap" rel="stylesheet">
+
+  <!-- Supabase JS client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tailwind CDN — config must be assigned to tailwind.config (not tailwindcss.config) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bb-yellow-00':   '#e8a833',
+            'bb-yellow-100':  '#ffc726',
+            'bb-yellow-40':   '#ffe9a8',
+            'bb-yellow-10':   '#fff9e9',
+            'bb-blue-00':     '#00164a',
+            'bb-blue-100':    '#00267f',
+            'bb-blue-40':     '#99a8cc',
+            'bb-blue-10':     '#e5e9f2',
+            'bb-black-00':    '#000000',
+            'bb-mid-grey-00': '#595959',
+            'bb-grey-00':     '#e0e4e9',
+            'bb-white-00':    '#ffffff',
+            'bb-green-00':    '#00654a',
+            'bb-green-100':   '#1fbf84',
+            'bb-green-40':    '#a5e5ce',
+            'bb-green-10':    '#e9f9f3',
+            'bb-red-00':      '#a42c2c',
+            'bb-red-100':     '#ff6b6b',
+            'bb-red-40':      '#ffc4c4',
+            'bb-red-10':      '#fff0f0',
+            'bb-teal-00':     '#0e5f64',
+            'bb-teal-100':    '#30c0c8',
+            'bb-teal-40':     '#ace6e9',
+            'bb-teal-10':     '#eaf9f9',
+            'bb-purple-00':   '#4a235a',
+            'bb-purple-100':  '#a962c7',
+            'bb-pink-00':     '#ad1157',
+            'bb-pink-100':    '#ff94d9',
+          },
+          fontFamily: {
+            sans: ['Figtree', '-apple-system', 'system-ui', '"Segoe UI"', 'Roboto', 'sans-serif'],
+          },
+          spacing: {
+            'xs': '0.5rem',
+            's':  '1rem',
+            'xm': '1.5rem',
+            'm':  '2rem',
+            'l':  '4rem',
+            'xl': '8rem',
+          },
+          borderRadius: {
+            'sm': '0.25rem',
+            'md': '0.375rem',
+            'lg': '0.5rem',
+          },
+          boxShadow: {
+            'form-hover': 'inset 4px 4px 0px 0px rgba(0,0,0,0.1)',
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    body { font-family: Figtree, -apple-system, "system-ui", "Segoe UI", Roboto, sans-serif; }
+
+    /* ── Badge colours (category) ── */
+    .badge-email       { background:#E0F2F1; color:#004D49; }
+    .badge-field       { background:#E8EBF8; color:#00267f; }
+    .badge-validation  { background:#F3EDF8; color:#4a235a; }
+    .badge-structure   { background:#FEF3E2; color:#B45309; }
+    .badge-conditional { background:#FEF2F2; color:#9B1C1C; }
+    .badge-process     { background:#F0FDF4; color:#166534; }
+
+    /* ── Badge colours (status) ── */
+    .badge-active     { background:#e9f9f3; color:#00654a; }
+    .badge-review     { background:#FEF3E2; color:#92400E; }
+    .badge-superseded { background:#F3F4F6; color:#6B7280; }
+
+    /* ── Email table cell status ── */
+    .cell-required    { color:#0e5f64; font-weight:600; display:flex; align-items:flex-start; gap:5px; }
+    .cell-excluded    { color:#a42c2c; font-weight:600; display:flex; align-items:flex-start; gap:5px; }
+    .cell-conditional { color:#D97706; font-weight:600; display:flex; align-items:flex-start; gap:5px; }
+    .cell-note        { display:block; font-style:italic; font-weight:400; color:#595959; margin-top:2px; font-size:0.8rem; }
+
+    /* ── Collapsible card ── */
+    .decision-body { display:none; }
+    .decision-card.open .decision-body { display:block; }
+    .decision-card.open { border-left:4px solid #00267f !important; }
+
+    .chevron { transition: transform 0.2s; }
+    .decision-card.open .chevron { transform: rotate(90deg); }
+
+    /* ── Filter active ── */
+    .filter-btn.active { background:#00267f; color:#fff; border-color:#00267f; }
+
+    /* ── Collapsible section headings ── */
+    .section-heading { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; margin:2rem 0 0.75rem; padding:0.25rem 0; }
+    .section-heading h2 { margin:0; transition:color 0.15s; }
+    .section-heading:hover h2 { color:#0e5f64; }
+    .section-chevron { transition:transform 0.2s; color:#595959; flex-shrink:0; transform:rotate(90deg); }
+    .section-collapsed .section-chevron { transform:rotate(0deg); }
+    .section-collapsed .section-decisions { display:none; }
+
+    /* ── Export dropdown menu ── */
+    .export-menu-item { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer; white-space:nowrap; }
+    .export-menu-item:hover { background:#e5e9f2; }
+  </style>
+</head>
+<body style="font-family:Figtree,-apple-system,system-ui,'Segoe UI',Roboto,sans-serif; font-size:1rem; line-height:1.5; color:#000; background:#fff; min-height:100vh; display:flex; flex-direction:column; margin:0;">
+
+  <!-- ══════════════════════════════════
+       TOP BAR — blue-100
+  ══════════════════════════════════ -->
+  <div style="background:#00267f; color:#fff;">
+    <div style="max-width:1200px; margin:0 auto; padding:6px 1rem; display:flex; align-items:center; gap:8px;">
+      <img src="https://alpha.gov.bb/images/coat-of-arms.png" alt="Coat of Arms" style="height:16px;" />
+      <span style="font-size:0.9rem; font-weight:300;">Official government website</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       HEADER — yellow-100 + GOB wordmark
+  ══════════════════════════════════ -->
+  <header style="background:#ffc726;">
+    <div style="max-width:1200px; margin:0 auto; padding:10px 1rem;">
+      <svg width="276" viewBox="0 0 276 27" fill="currentColor" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Government of Barbados" style="height:27px; color:#000;">
+        <g>
+          <path d="M39.079 21.527C37.5026 21.527 36.103 21.1903 34.8802 20.5168C33.6721 19.8286 32.7219 18.8916 32.0294 17.7057C31.337 16.5051 30.9908 15.1288 30.9908 13.5769C30.9908 12.0249 31.337 10.6559 32.0294 9.47001C32.7219 8.26943 33.6721 7.3324 34.8802 6.65891C36.103 5.97077 37.5026 5.6267 39.079 5.6267C40.0219 5.6267 40.8911 5.7658 41.6867 6.04398C42.4823 6.32216 43.1821 6.71015 43.7861 7.20795C44.4049 7.69111 44.9205 8.24747 45.3331 8.87704L42.858 10.4144C42.6075 10.0191 42.276 9.66767 41.8635 9.3602C41.4657 9.05274 41.0237 8.81116 40.5376 8.63547C40.0514 8.45977 39.5652 8.37192 39.079 8.37192C38.1067 8.37192 37.2448 8.59886 36.4934 9.05274C35.7421 9.49197 35.1527 10.0996 34.7255 10.8756C34.2982 11.6515 34.0846 12.552 34.0846 13.5769C34.0846 14.5871 34.2909 15.4875 34.7034 16.2782C35.1307 17.0688 35.7273 17.691 36.4934 18.1449C37.2595 18.5841 38.1435 18.8038 39.1453 18.8038C39.8967 18.8038 40.567 18.6647 41.1563 18.3865C41.7456 18.0937 42.2171 17.691 42.5707 17.1786C42.9243 16.6661 43.1231 16.0659 43.1673 15.3777H39.5873V13.0278H46.0844V14.8946C46.055 16.3001 45.7382 17.5007 45.1342 18.4963C44.5301 19.4773 43.7051 20.2313 42.6591 20.7584C41.613 21.2708 40.4197 21.527 39.079 21.527Z"/>
+          <path d="M52.8353 21.527C51.7156 21.527 50.7138 21.2854 49.8298 20.8023C48.9606 20.3045 48.2755 19.6237 47.7746 18.7598C47.2884 17.896 47.0453 16.9004 47.0453 15.773C47.0453 14.6457 47.2884 13.6501 47.7746 12.7862C48.2608 11.9224 48.9385 11.2489 49.8077 10.7658C50.677 10.268 51.6714 10.0191 52.7911 10.0191C53.9255 10.0191 54.9273 10.268 55.7966 10.7658C56.6658 11.2489 57.3435 11.9224 57.8297 12.7862C58.3159 13.6501 58.559 14.6457 58.559 15.773C58.559 16.9004 58.3159 17.896 57.8297 18.7598C57.3435 19.6237 56.6658 20.3045 55.7966 20.8023C54.9421 21.2854 53.955 21.527 52.8353 21.527ZM52.8353 18.8477C53.3804 18.8477 53.8592 18.7159 54.2717 18.4524C54.6843 18.1888 55.001 17.8301 55.222 17.3763C55.4577 16.9077 55.5756 16.3733 55.5756 15.773C55.5756 15.1728 55.4577 14.6457 55.222 14.1918C54.9863 13.7233 54.6548 13.3572 54.2275 13.0937C53.815 12.8302 53.3362 12.6984 52.7911 12.6984C52.2607 12.6984 51.7819 12.8302 51.3547 13.0937C50.9421 13.3572 50.618 13.7233 50.3823 14.1918C50.1466 14.6457 50.0287 15.1728 50.0287 15.773C50.0287 16.3733 50.1466 16.9077 50.3823 17.3763C50.618 17.8301 50.9495 18.1888 51.3768 18.4524C51.804 18.7159 52.2902 18.8477 52.8353 18.8477Z"/>
+          <path d="M62.8109 21.2635L58.2806 10.2826H61.2861L64.2694 17.9472L67.2528 10.2826H70.2583L65.728 21.2635H62.8109Z"/>
+          <path d="M75.7678 21.527C74.6776 21.527 73.7126 21.2854 72.8729 20.8023C72.0331 20.3045 71.3701 19.6237 70.884 18.7598C70.4125 17.896 70.1768 16.9004 70.1768 15.773C70.1768 14.6457 70.4199 13.6501 70.906 12.7862C71.407 11.9224 72.0847 11.2489 72.9392 10.7658C73.8084 10.268 74.8029 10.0191 75.9225 10.0191C76.8949 10.0191 77.7862 10.2753 78.5965 10.7877C79.4216 11.2855 80.0772 12.0249 80.5633 13.0059C81.0643 13.9722 81.3147 15.1508 81.3147 16.5417H73.2265C73.3001 17.2738 73.6169 17.8594 74.1767 18.2986C74.7366 18.7232 75.3701 18.9355 76.0772 18.9355C76.6813 18.9355 77.1748 18.8111 77.5579 18.5622C77.9409 18.2986 78.2356 17.9619 78.4418 17.5519L81.0495 18.5622C80.7401 19.1771 80.335 19.7115 79.8341 20.1654C79.3479 20.6046 78.766 20.9414 78.0883 21.1756C77.4106 21.4099 76.6371 21.527 75.7678 21.527ZM73.3811 14.3894H78.1545C78.1103 13.9356 77.963 13.5695 77.7126 13.2914C77.4621 13.0132 77.1675 12.8082 76.8286 12.6764C76.4898 12.5447 76.1583 12.4788 75.8341 12.4788C75.5247 12.4788 75.1859 12.5447 74.8176 12.6764C74.464 12.7936 74.1472 12.9912 73.8673 13.2694C73.6021 13.5476 73.4401 13.9209 73.3811 14.3894Z"/>
+          <path d="M82.4937 21.2635V10.2826H85.4107V12.3031C85.8675 11.6149 86.442 11.1025 87.1345 10.7658C87.8416 10.4144 88.5709 10.2387 89.3223 10.2387V13.0498C88.6446 13.0498 88.0037 13.1303 87.3997 13.2914C86.8103 13.4524 86.3315 13.716 85.9632 14.082C85.5949 14.448 85.4107 14.9165 85.4107 15.4875V21.2635H82.4937Z"/>
+          <path d="M90.8937 21.2635V10.2826H93.634L93.7666 11.776C94.1202 11.205 94.5695 10.7731 95.1146 10.4803C95.6744 10.1728 96.308 10.0191 97.0151 10.0191C97.8844 10.0191 98.6284 10.1947 99.2471 10.5461C99.8659 10.8975 100.337 11.4466 100.661 12.1933C100.986 12.9253 101.14 13.877 101.126 15.0483V21.2635H98.2085V15.6413C98.2085 14.8946 98.1201 14.3162 97.9433 13.9063C97.7812 13.4963 97.5455 13.2035 97.2361 13.0278C96.9267 12.8375 96.5658 12.7423 96.1533 12.7423C95.4019 12.7277 94.82 12.9546 94.4074 13.4231C94.0097 13.8916 93.8108 14.5871 93.8108 15.5095V21.2635H90.8937Z"/>
+          <path d="M103.196 21.2635V10.2826H105.936L106.069 11.7101C106.407 11.1538 106.842 10.7365 107.372 10.4583C107.903 10.1655 108.492 10.0191 109.14 10.0191C110.039 10.0191 110.79 10.2094 111.395 10.5901C112.013 10.9707 112.463 11.5564 112.743 12.347C113.067 11.6003 113.523 11.0293 114.113 10.634C114.702 10.224 115.387 10.0191 116.168 10.0191C117.464 10.0191 118.451 10.429 119.129 11.2489C119.807 12.0542 120.146 13.2987 120.146 14.9824V21.2635H117.229V15.6413C117.229 14.8946 117.148 14.3162 116.986 13.9063C116.824 13.4963 116.603 13.2035 116.323 13.0278C116.043 12.8375 115.711 12.7423 115.328 12.7423C114.621 12.7277 114.076 12.9546 113.693 13.4231C113.31 13.8916 113.118 14.5871 113.118 15.5095V21.2635H110.201V15.6413C110.201 14.8946 110.12 14.3162 109.958 13.9063C109.811 13.4963 109.59 13.2035 109.295 13.0278C109.015 12.8375 108.684 12.7423 108.301 12.7423C107.593 12.7277 107.048 12.9546 106.665 13.4231C106.297 13.8916 106.113 14.5871 106.113 15.5095V21.2635H103.196Z"/>
+          <path d="M126.946 21.527C125.856 21.527 124.891 21.2854 124.051 20.8023C123.211 20.3045 122.548 19.6237 122.062 18.7598C121.59 17.896 121.355 16.9004 121.355 15.773C121.355 14.6457 121.598 13.6501 122.084 12.7862C122.585 11.9224 123.263 11.2489 124.117 10.7658C124.986 10.268 125.981 10.0191 127.1 10.0191C128.073 10.0191 128.964 10.2753 129.774 10.7877C130.6 11.2855 131.255 12.0249 131.741 13.0059C132.242 13.9722 132.493 15.1508 132.493 16.5417H124.404C124.478 17.2738 124.795 17.8594 125.355 18.2986C125.915 18.7232 126.548 18.9355 127.255 18.9355C127.859 18.9355 128.353 18.8111 128.736 18.5622C129.119 18.2986 129.414 17.9619 129.62 17.5519L132.227 18.5622C131.918 19.1771 131.513 19.7115 131.012 20.1654C130.526 20.6046 129.944 20.9414 129.266 21.1756C128.588 21.4099 127.815 21.527 126.946 21.527ZM124.559 14.3894H129.332C129.288 13.9356 129.141 13.5695 128.891 13.2914C128.64 13.0132 128.345 12.8082 128.007 12.6764C127.668 12.5447 127.336 12.4788 127.012 12.4788C126.703 12.4788 126.364 12.5447 125.996 12.6764C125.642 12.7936 125.325 12.9912 125.045 13.2694C124.78 13.5476 124.618 13.9209 124.559 14.3894Z"/>
+          <path d="M133.93 21.2635V10.2826H136.67L136.803 11.776C137.156 11.205 137.606 10.7731 138.151 10.4803C138.711 10.1728 139.344 10.0191 140.051 10.0191C140.92 10.0191 141.664 10.1947 142.283 10.5461C142.902 10.8975 143.373 11.4466 143.698 12.1933C144.022 12.9253 144.176 13.877 144.162 15.0483V21.2635H141.245V15.6413C141.245 14.8946 141.156 14.3162 140.979 13.9063C140.817 13.4963 140.582 13.2035 140.272 13.0278C139.963 12.8375 139.602 12.7423 139.189 12.7423C138.438 12.7277 137.856 12.9546 137.444 13.4231C137.046 13.8916 136.847 14.5871 136.847 15.5095V21.2635H133.93Z"/>
+          <path d="M150.526 21.527C149.303 21.527 148.375 21.2269 147.742 20.6266C147.123 20.0263 146.813 19.1698 146.813 18.0571V12.7423H145.023V10.2826H146.813V6.85656H149.731V10.2826H152.493V12.7423H149.731V17.4202C149.731 17.8887 149.834 18.2474 150.04 18.4963C150.246 18.7306 150.548 18.8477 150.946 18.8477C151.093 18.8477 151.255 18.8184 151.432 18.7598C151.609 18.6866 151.793 18.5841 151.985 18.4524L153.001 20.6266C152.648 20.8901 152.25 21.1024 151.808 21.2635C151.381 21.4392 150.953 21.527 150.526 21.527Z"/>
+          <path d="M186.422 21.2635V5.89025H191.66C192.72 5.89025 193.649 6.0513 194.444 6.37341C195.24 6.69551 195.859 7.18599 196.3 7.84485C196.742 8.48906 196.963 9.29432 196.963 10.2606C196.963 10.8609 196.809 11.4173 196.499 11.9297C196.205 12.4275 195.785 12.8594 195.24 13.2255C195.962 13.5915 196.514 14.082 196.897 14.6969C197.295 15.2972 197.494 16.8711 197.494 16.8711C197.494 16.8711 197.28 18.6061 196.853 19.265C196.426 19.9238 195.829 20.4216 195.063 20.7584C194.297 21.0951 193.398 21.2635 192.367 21.2635H186.422ZM189.383 18.6061H192.08C192.801 18.6061 193.369 18.4304 193.781 18.079C194.194 17.713 194.4 17.2298 194.4 16.6296C194.4 16 194.172 15.5095 193.715 15.1581C193.258 14.7921 192.632 14.6091 191.836 14.6091H189.383V18.6061ZM189.383 12.1494H191.726C192.389 12.1494 192.912 11.981 193.295 11.6442C193.678 11.3075 193.87 10.8316 193.87 10.2167C193.87 9.60179 193.656 9.12595 193.229 8.7892C192.801 8.45245 192.22 8.28408 191.483 8.28408H189.383V12.1494Z"/>
+          <path d="M202.673 21.527C201.347 21.527 200.316 21.2342 199.58 20.6486C198.858 20.0629 198.497 19.2357 198.497 18.1669C198.497 16.9956 198.887 16.1171 199.668 15.5315C200.464 14.9312 201.576 14.631 203.005 14.631H205.613C205.509 13.9575 205.296 13.4451 204.972 13.0937C204.648 12.7277 204.184 12.5447 203.58 12.5447C203.108 12.5447 202.681 12.6472 202.298 12.8521C201.915 13.0571 201.591 13.3719 201.325 13.7965L198.762 12.918C198.968 12.4495 199.27 11.9956 199.668 11.5564C200.066 11.1025 200.581 10.7365 201.215 10.4583C201.863 10.1655 202.651 10.0191 203.58 10.0191C204.699 10.0191 205.627 10.2314 206.364 10.656C207.115 11.0805 207.668 11.6808 208.021 12.4568C208.39 13.2182 208.566 14.1259 208.552 15.1801L208.485 21.2635H205.767L205.723 19.9897C205.443 20.4875 205.045 20.8682 204.53 21.1317C204.029 21.3953 203.41 21.527 202.673 21.527ZM203.16 19.1112C203.631 19.1112 204.058 19.0014 204.441 18.7818C204.824 18.5622 205.126 18.2767 205.347 17.9253C205.568 17.5739 205.679 17.2079 205.679 16.8272V16.7833H204.021C203.064 16.7833 202.401 16.9004 202.033 17.1347C201.664 17.3543 201.48 17.6691 201.48 18.079C201.48 18.4011 201.627 18.6574 201.922 18.8477C202.217 19.0234 202.629 19.1112 203.16 19.1112Z"/>
+          <path d="M210.512 21.2635V10.2826H213.429V12.3031C213.886 11.6149 214.461 11.1025 215.153 10.7658C215.86 10.4144 216.59 10.2387 217.341 10.2387V13.0498C216.663 13.0498 216.022 13.1303 215.418 13.2914C214.829 13.4524 214.35 13.716 213.982 14.082C213.614 14.448 213.429 14.9165 213.429 15.4875V21.2635H210.512Z"/>
+          <path d="M224.7 21.527C223.948 21.527 223.293 21.3733 222.733 21.0658C222.173 20.7437 221.702 20.2898 221.318 19.7042L221.208 21.2635H218.446V5.89025H221.363V11.776C221.731 11.205 222.195 10.7731 222.755 10.4803C223.315 10.1728 223.963 10.0191 224.7 10.0191C225.716 10.0191 226.593 10.2533 227.329 10.7218C228.081 11.1904 228.663 11.8565 229.075 12.7204C229.488 13.5695 229.694 14.5871 229.694 15.773C229.694 16.9443 229.488 17.9619 229.075 18.8257C228.663 19.6896 228.081 20.3557 227.329 20.8242C226.593 21.2928 225.716 21.527 224.7 21.527ZM223.948 18.8697C224.479 18.8697 224.943 18.7379 225.34 18.4743C225.753 18.2108 226.077 17.8448 226.313 17.3763C226.549 16.9077 226.666 16.3733 226.666 15.773C226.666 15.1728 226.549 14.6384 226.313 14.1698C226.092 13.7013 225.775 13.3426 225.363 13.0937C224.965 12.8302 224.501 12.6984 223.97 12.6984C223.469 12.6984 223.02 12.8302 222.622 13.0937C222.225 13.3572 221.915 13.7233 221.694 14.1918C221.473 14.6457 221.363 15.1728 221.363 15.773C221.363 16.3733 221.473 16.9077 221.694 17.3763C221.915 17.8448 222.217 18.2108 222.6 18.4743C222.998 18.7379 223.447 18.8697 223.948 18.8697Z"/>
+          <path d="M234.674 21.527C233.348 21.527 232.317 21.2342 231.58 20.6486C230.858 20.0629 230.497 19.2357 230.497 18.1669C230.497 16.9956 230.887 16.1171 231.668 15.5315C232.464 14.9312 233.576 14.631 235.005 14.631H237.613C237.51 13.9575 237.296 13.4451 236.972 13.0937C236.648 12.7277 236.184 12.5447 235.58 12.5447C235.108 12.5447 234.681 12.6472 234.298 12.8521C233.915 13.0571 233.591 13.3719 233.326 13.7965L230.762 12.918C230.969 12.4495 231.271 11.9956 231.668 11.5564C232.066 11.1025 232.582 10.7365 233.215 10.4583C233.863 10.1655 234.652 10.0191 235.58 10.0191C236.7 10.0191 237.628 10.2314 238.364 10.656C239.116 11.0805 239.668 11.6808 240.022 12.4568C240.39 13.2182 240.567 14.1259 240.552 15.1801L240.486 21.2635H237.768L237.723 19.9897C237.443 20.4875 237.046 20.8682 236.53 21.1317C236.029 21.3953 235.41 21.527 234.674 21.527ZM235.16 19.1112C235.631 19.1112 236.059 19.0014 236.442 18.7818C236.825 18.5622 237.127 18.2767 237.348 17.9253C237.569 17.5739 237.679 17.2079 237.679 16.8272V16.7833H236.022C235.064 16.7833 234.401 16.9004 234.033 17.1347C233.665 17.3543 233.48 17.6691 233.48 18.079C233.48 18.4011 233.628 18.6574 233.922 18.8477C234.217 19.0234 234.63 19.1112 235.16 19.1112Z"/>
+          <path d="M246.758 21.527C245.742 21.527 244.858 21.2928 244.107 20.8242C243.37 20.3557 242.795 19.6896 242.383 18.8257C241.97 17.9619 241.764 16.9443 241.764 15.773C241.764 14.5871 241.97 13.5695 242.383 12.7204C242.795 11.8565 243.37 11.1904 244.107 10.7218C244.858 10.2533 245.742 10.0191 246.758 10.0191C247.48 10.0191 248.121 10.1728 248.681 10.4803C249.256 10.7731 249.72 11.1977 250.073 11.754V5.89025H252.99V21.2635H250.228L250.14 19.7262C249.771 20.2972 249.3 20.7437 248.725 21.0658C248.151 21.3733 247.495 21.527 246.758 21.527ZM247.51 18.8697C247.996 18.8697 248.423 18.7525 248.792 18.5183C249.175 18.2694 249.477 17.9253 249.698 17.4861C249.919 17.0468 250.044 16.549 250.073 15.9927V15.5534C250.044 14.9971 249.919 14.5066 249.698 14.082C249.477 13.6428 249.175 13.306 248.792 13.0717C248.409 12.8228 247.974 12.6984 247.488 12.6984C246.957 12.6984 246.486 12.8302 246.073 13.0937C245.676 13.3426 245.359 13.7013 245.123 14.1698C244.902 14.6384 244.792 15.1728 244.792 15.773C244.792 16.3733 244.909 16.9077 245.145 17.3763C245.381 17.8448 245.698 18.2108 246.095 18.4743C246.508 18.7379 246.979 18.8697 247.51 18.8697Z"/>
+          <path d="M260.409 21.527C259.289 21.527 258.287 21.2854 257.403 20.8023C256.534 20.3045 255.849 19.6237 255.348 18.7598C254.862 17.896 254.619 16.9004 254.619 15.773C254.619 14.6457 254.862 13.6501 255.348 12.7862C255.834 11.9224 256.512 11.2489 257.381 10.7658C258.25 10.268 259.245 10.0191 260.364 10.0191C261.499 10.0191 262.501 10.268 263.37 10.7658C264.239 11.2489 264.917 11.9224 265.403 12.7862C265.889 13.6501 266.132 14.6457 266.132 15.773C266.132 16.9004 265.889 17.896 265.403 18.7598C264.917 19.6237 264.239 20.3045 263.37 20.8023C262.515 21.2854 261.528 21.527 260.409 21.527ZM260.409 18.8477C260.954 18.8477 261.433 18.7159 261.845 18.4524C262.258 18.1888 262.574 17.8301 262.795 17.3763C263.031 16.9077 263.149 16.3733 263.149 15.773C263.149 15.1728 263.031 14.6457 262.795 14.1918C262.56 13.7233 262.228 13.3572 261.801 13.0937C261.388 12.8302 260.91 12.6984 260.364 12.6984C259.834 12.6984 259.355 12.8302 258.928 13.0937C258.515 13.3572 258.191 13.7233 257.956 14.1918C257.72 14.6457 257.602 15.1728 257.602 15.773C257.602 16.3733 257.72 16.9077 257.956 17.3763C258.191 17.8301 258.523 18.1888 258.95 18.4524C259.377 18.7159 259.863 18.8477 260.409 18.8477Z"/>
+          <path d="M271.536 21.527C270.829 21.527 270.166 21.4245 269.547 21.2196C268.928 20.9999 268.383 20.6925 267.912 20.2972C267.44 19.8872 267.072 19.3894 266.807 18.8038L269.304 17.6618C269.525 18.0131 269.827 18.3206 270.21 18.5841C270.593 18.833 271.035 18.9575 271.536 18.9575C272.022 18.9575 272.398 18.8916 272.663 18.7598C272.928 18.6134 273.061 18.4085 273.061 18.1449C273.061 17.8814 272.95 17.691 272.729 17.5739C272.523 17.4421 272.236 17.3323 271.867 17.2445L270.851 16.9809C269.79 16.7028 268.95 16.2635 268.332 15.6632C267.728 15.0483 267.426 14.3455 267.426 13.5549C267.426 12.4275 267.787 11.5564 268.508 10.9415C269.245 10.3265 270.284 10.0191 271.624 10.0191C272.317 10.0191 272.958 10.1215 273.547 10.3265C274.151 10.5315 274.667 10.817 275.094 11.183C275.521 11.5491 275.816 11.9737 275.978 12.4568L273.569 13.5549C273.466 13.2621 273.216 13.0278 272.818 12.8521C272.42 12.6618 272.022 12.5666 271.624 12.5666C271.227 12.5666 270.917 12.6545 270.696 12.8302C270.49 12.9912 270.387 13.2182 270.387 13.511C270.387 13.7013 270.49 13.8624 270.696 13.9941C270.902 14.1113 271.197 14.2138 271.58 14.3016L273.017 14.653C273.739 14.8287 274.313 15.1142 274.74 15.5095C275.182 15.8902 275.499 16.3221 275.691 16.8052C275.897 17.2738 276 17.735 276 18.1888C276 18.8477 275.801 19.4333 275.403 19.9458C275.02 20.4436 274.49 20.8316 273.812 21.1098C273.149 21.3879 272.39 21.527 271.536 21.527Z"/>
+          <path d="M165.302 21.527C164.182 21.527 163.18 21.2855 162.296 20.8023C161.427 20.3045 160.742 19.6237 160.241 18.7598C159.755 17.896 159.512 16.9004 159.512 15.773C159.512 14.6457 159.755 13.6501 160.241 12.7862C160.727 11.9224 161.405 11.2489 162.274 10.7658C163.144 10.268 164.138 10.0191 165.258 10.0191C166.392 10.0191 167.394 10.268 168.263 10.7658C169.132 11.2489 169.81 11.9224 170.296 12.7862C170.782 13.6501 171.026 14.6457 171.026 15.773C171.026 16.9004 170.782 17.896 170.296 18.7598C169.81 19.6237 169.132 20.3045 168.263 20.8023C167.409 21.2855 166.422 21.527 165.302 21.527ZM165.302 18.8477C165.847 18.8477 166.326 18.7159 166.738 18.4524C167.151 18.1888 167.468 17.8301 167.689 17.3763C167.924 16.9077 168.042 16.3733 168.042 15.773C168.042 15.1728 167.924 14.6457 167.689 14.1918C167.453 13.7233 167.121 13.3572 166.694 13.0937C166.282 12.8302 165.803 12.6984 165.258 12.6984C164.727 12.6984 164.249 12.8302 163.821 13.0937C163.409 13.3572 163.085 13.7233 162.849 14.1918C162.613 14.6457 162.495 15.1728 162.495 15.773C162.495 16.3733 162.613 16.9077 162.849 17.3763C163.085 17.8301 163.416 18.1888 163.843 18.4524C164.271 18.7159 164.757 18.8477 165.302 18.8477Z"/>
+          <path d="M173.144 21.2635V12.6105H171.309V10.2826H173.144V9.18451C173.144 8.01321 173.446 7.10546 174.05 6.46125C174.654 5.8024 175.574 5.47297 176.812 5.47297C177.239 5.47297 177.689 5.54618 178.16 5.69259C178.646 5.839 179.088 6.0147 179.486 6.21967L178.403 8.30604C178.167 8.18891 177.954 8.10106 177.762 8.04249C177.571 7.98393 177.394 7.95465 177.232 7.95465C176.834 7.95465 176.539 8.09374 176.348 8.37192C176.156 8.63547 176.061 9.06738 176.061 9.66767V10.2826H178.779V12.6105H176.061V21.2635H173.144Z"/>
+          <path d="M12.5786 0C11.6253 2.46943 10.6536 5.03986 8.57466 7.00774C9.21998 6.80573 10.3493 6.62461 11.0753 6.64203V17.0283L7.988 17.4636C7.878 17.4532 7.84133 17.2895 7.84133 17.0666C7.54434 13.8413 6.74135 11.1316 5.81736 8.32779C5.75136 7.94466 4.58171 6.48181 5.4837 6.73955C5.5937 6.75348 6.80002 7.2202 6.60935 6.99729C4.96671 5.38119 2.56508 4.21788 0.233112 3.87306C0.0277812 3.8243 -0.0932171 3.92183 0.0901136 4.14822C3.18474 8.6726 5.77336 14.012 5.75136 20.3475C6.95401 20.3475 9.86897 19.6718 11.0753 19.6718V27H12.5969L12.9453 6.53406L12.5786 0Z"/>
+          <path d="M12.5786 0C13.5319 2.46943 14.5036 5.03986 16.5825 7.00774C15.9372 6.80573 14.8079 6.62461 14.0819 6.64203V17.0283L17.1692 17.4636C17.2792 17.4532 17.3159 17.2895 17.3159 17.0666C17.6129 13.8413 18.4158 11.1316 19.3398 8.32779C19.4058 7.94466 20.5755 6.48181 19.6735 6.73955C19.5635 6.75348 18.3572 7.2202 18.5478 6.99729C20.1905 5.38119 22.5921 4.21788 24.9241 3.87306C25.1294 3.8243 25.2504 3.92183 25.0671 4.14822C21.9725 8.6726 19.3838 14.012 19.4058 20.3475C18.2032 20.3475 15.2882 19.6718 14.0819 19.6718V27H12.5603L12.2119 6.53406L12.5786 0Z"/>
+        </g>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════
+       ALPHA BANNER
+  ══════════════════════════════════ -->
+  <div style="background:#e5e9f2; border-bottom:1px solid #99a8cc;">
+    <div style="max-width:1200px; margin:0 auto; padding:6px 1rem; font-size:0.9rem;">
+      This page is in <a href="#" style="color:#0e5f64; text-decoration:underline;">alpha</a>. · Last updated: July 2026 — 15 new decisions added from live validation findings.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════ -->
+  <main style="flex:1;">
+    <div style="max-width:1200px; margin:0 auto; padding:2rem 1rem 5rem;">
+
+      <!-- Breadcrumb -->
+      <nav aria-label="Breadcrumb" style="font-size:0.875rem; color:#595959; margin-bottom:1rem;">
+        <a href="#" style="color:#0e5f64; text-decoration:underline;">GovTech Barbados</a>
+        <span style="margin:0 6px; color:#999;">›</span>
+        Form decision log
+      </nav>
+
+      <h1 style="font-size:2.25rem; font-weight:700; margin-bottom:0.5rem; line-height:1.15;">Form decision log</h1>
+      <p style="color:#595959; margin-bottom:1.75rem;">Design and field decisions made across the GovTech Barbados forms programme, covering all MDAs.</p>
+
+      <!-- ACTION BAR -->
+      <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-bottom:1.75rem;">
+        <div style="position:relative;">
+          <button id="export-btn" onclick="toggleExportMenu()" style="display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer; font-weight:500;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Export
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div id="export-menu" style="display:none; position:absolute; right:0; top:calc(100% + 4px); background:#fff; border:1px solid #99a8cc; border-radius:0.375rem; box-shadow:0 4px 14px rgba(0,0,0,0.12); z-index:200; overflow:hidden;">
+            <button class="export-menu-item" onclick="exportCSV(); toggleExportMenu()">CSV (.csv)</button>
+            <button class="export-menu-item" onclick="exportJSON(); toggleExportMenu()">JSON (.json)</button>
+            <button class="export-menu-item" onclick="exportMarkdown(); toggleExportMenu()">Markdown (.md)</button>
+          </div>
+        </div>
+        <button onclick="openModal()" style="display:inline-flex; align-items:center; gap:6px; background:#0e5f64; border:none; border-radius:0.25rem; padding:7px 16px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#fff; cursor:pointer; font-weight:500;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          New decision
+        </button>
+      </div>
+
+      <!-- STATUS OVERVIEW -->
+      <div id="stats-root" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1.5rem;"></div>
+
+      <!-- TWO-COLUMN LAYOUT: decisions (left) + timeline (right) -->
+      <div style="display:grid; grid-template-columns:1fr 300px; gap:2rem; align-items:start;">
+
+        <!-- ── LEFT COLUMN ── -->
+        <div>
+          <!-- Filter bar -->
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:1.25rem;">
+            <button class="filter-btn active" data-filter="all"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">All</button>
+            <button class="filter-btn" data-filter="email"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Email</button>
+            <button class="filter-btn" data-filter="field"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Field</button>
+            <button class="filter-btn" data-filter="validation"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Validation</button>
+            <button class="filter-btn" data-filter="structure"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Structure</button>
+            <button class="filter-btn" data-filter="conditional"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Conditional</button>
+            <button class="filter-btn" data-filter="process"
+              style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:5px 14px; font-family:Figtree,sans-serif; font-size:0.875rem; color:#00267f; cursor:pointer;">Process</button>
+          </div>
+          <!-- Recent decisions heading -->
+          <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:1rem;">
+            <h2 style="font-size:1.1rem; font-weight:700; color:#00267f; margin:0;">Recent decisions</h2>
+            <span id="filter-count" style="font-size:0.82rem; color:#595959; font-family:monospace;"></span>
+          </div>
+          <!-- Decision sections -->
+          <div id="decisions-root"></div>
+        </div>
+
+        <!-- ── RIGHT COLUMN: activity timeline, sticky ── -->
+        <div style="position:sticky; top:1.5rem;">
+          <h2 style="font-size:1.1rem; font-weight:700; color:#00267f; margin:0 0 1rem; padding-bottom:0.6rem; border-bottom:2px solid #e0e4e9;">Activity timeline</h2>
+          <div id="timeline-root" style="max-height:78vh; overflow-y:auto;"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════
+       NEW DECISION MODAL
+  ══════════════════════════════════ -->
+  <div id="modal-overlay" onclick="closeModal(event)" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto;">
+    <div onclick="event.stopPropagation()" style="background:#fff; border-radius:0.5rem; width:100%; max-width:640px; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+
+      <!-- Modal header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid #e0e4e9;">
+        <h2 id="modal-title" style="font-size:1.1rem; font-weight:700; margin:0;">Log a new decision</h2>
+        <button onclick="closeModal()" style="background:none; border:none; cursor:pointer; font-size:1.25rem; color:#595959; line-height:1;">✕</button>
+      </div>
+
+      <!-- Modal form -->
+      <form id="decision-form" onsubmit="submitDecision(event)" style="padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Title *</label>
+            <input id="f-title" required placeholder="Short active statement" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; outline:none;" />
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Applies to</label>
+            <input id="f-applies" placeholder="e.g. All forms" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; outline:none;" />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Category *</label>
+            <select id="f-category" required style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; background:#fff; outline:none;">
+              <option value="">Select…</option>
+              <option value="email">Email</option>
+              <option value="field">Field</option>
+              <option value="validation">Validation</option>
+              <option value="structure">Structure</option>
+              <option value="conditional">Conditional</option>
+              <option value="process">Process</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Status *</label>
+            <select id="f-status" required style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; background:#fff; outline:none;">
+              <option value="active">Active</option>
+              <option value="review">Under review</option>
+              <option value="superseded">Superseded</option>
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Author *</label>
+            <input id="f-author" required placeholder="Your name" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; outline:none;" />
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Summary <span style="font-weight:400; text-transform:none;">(plain-language, 1–2 sentences)</span></label>
+          <textarea id="f-summary" rows="2" placeholder="What did you decide and why, in plain English?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Context *</label>
+            <textarea id="f-context" required rows="3" placeholder="What was the situation?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Decision *</label>
+            <textarea id="f-decision" required rows="3" placeholder="What did you decide?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:0.8rem; font-weight:700; color:#595959; text-transform:uppercase; letter-spacing:0.05em;">Rationale *</label>
+            <textarea id="f-rationale" required rows="3" placeholder="Why did you make this decision?" style="border:1.5px solid #000; border-radius:0.25rem; padding:8px 10px; font-family:Figtree,sans-serif; font-size:0.9rem; resize:vertical; outline:none;"></textarea>
+          </div>
+        </div>
+
+        <div id="form-error" style="display:none; color:#a42c2c; font-size:0.85rem; background:#fff0f0; border:1px solid #ffc4c4; border-radius:0.25rem; padding:8px 12px;"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:0.5rem; border-top:1px solid #e0e4e9;">
+          <button type="button" onclick="closeModal()" style="background:#fff; border:1px solid #99a8cc; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#00267f; cursor:pointer;">Cancel</button>
+          <button id="modal-submit-btn" type="submit" style="background:#0e5f64; border:none; border-radius:0.25rem; padding:8px 20px; font-family:Figtree,sans-serif; font-size:0.9rem; color:#fff; cursor:pointer; font-weight:600;">Save decision</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       FOOTER
+  ══════════════════════════════════ -->
+  <footer style="background:#00267f; color:#fff;">
+    <div style="max-width:1200px; margin:0 auto; padding:2rem 1rem; font-size:0.875rem; opacity:0.85;">
+      GovTech Barbados · NIS Forms Programme · For internal use
+    </div>
+  </footer>
+
+  <script>
+    /* ═══════════════════════════════════════════════════
+       SUPABASE CONFIG
+       Paste your project URL and anon key here.
+       Leave as-is to run in offline mode with seed data.
+    ═══════════════════════════════════════════════════ */
+    const SUPABASE_URL      = 'https://zijwusnnogcpnewvmivd.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inppand1c25ub2djcG5ld3ZtaXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTIwMDYsImV4cCI6MjA5MTE2ODAwNn0.NsZcqnyP0-UNpz4P1Hk31mKE_vXuNK-GP_86JAzL00Y';
+
+    const IS_CONFIGURED = !SUPABASE_URL.startsWith('YOUR_');
+    const db = IS_CONFIGURED
+      ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // Live decisions array — populated from Supabase or seed data on load
+    let DECISIONS = [];
+
+    // Track which section categories are currently collapsed
+    const collapsedSections = new Set();
+    function toggleSection(cat) {
+      if (collapsedSections.has(cat)) { collapsedSections.delete(cat); }
+      else { collapsedSections.add(cat); }
+      renderSections(getActiveFilter());
+    }
+
+    // Status filter (null = show all statuses)
+    let currentStatusFilter = null;
+    function setStatusFilter(status) {
+      currentStatusFilter = (currentStatusFilter === status) ? null : status;
+      setFilter("all"); // always reset category to "all" for clarity
+    }
+
+    // Edit mode state
+    let currentEditId = null;
+    const editedIds   = new Set(); // decisions edited this session
+
+    /* ═══════════════════════════════════════════════════
+       SEED DATA
+       Used on first run to populate the database,
+       and as fallback when running offline.
+    ═══════════════════════════════════════════════════ */
+    const SEED_DECISIONS = [
+      {
+        id: "FD-025",
+        title: "Middle name must not be a required field",
+        summary: "Middle name must always be optional. Not every applicant has a middle name, and marking it required excludes those who don't. applicant.middleName generated 6 errors across Jobstart Plus, Get birth certificate, and Get death certificate.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms collecting middle name",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "applicant.middleName generated 6 validation errors across 3 forms (Jobstart Plus 4, Get birth certificate 1, Get death certificate 1). These are required-type errors — users without a middle name cannot proceed past the field if it is marked required.",
+        decision: "Middle name must be marked optional on all forms. The label must indicate this clearly, e.g. 'Middle name (optional)'. No form should block submission because a middle name was not provided.",
+        rationale: "A significant proportion of Barbadian applicants — and CARICOM nationals who may be eligible for certain services — do not have a middle name. Requiring a field that not everyone has is exclusionary and generates avoidable errors.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-024",
+        title: "Free text fields with a minimum character count must show length guidance",
+        summary: "Any free text field with a minimum character requirement must display guidance telling users how much to write. The interest.motivation field generates too_small errors across 6 Youth opportunity forms because users do not know a minimum exists.",
+        category: "validation",
+        status: "active",
+        appliesTo: "All forms with minimum-length free text fields",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "interest.motivation generated 9 errors across Youth opportunity ydp, yes, cmc, yar, cip, and ceep — categorised as too_small. A character or word minimum is set on the field but no hint text tells users how much they are expected to write.",
+        decision: "Any free text field with a minimum character or word count must display a hint below the label stating the minimum (e.g. 'Tell us why you are interested. Write at least 50 words.'). A live character count indicator should be shown where technically feasible.",
+        rationale: "Users cannot meet a requirement they cannot see. Without guidance on length, short answers that fail validation create a frustrating, opaque error. This applies to any motivational, explanatory, or open-ended field with a validation minimum.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-023",
+        title: "Jobstart fields of uncertain necessity — marital status, sex, and NIS number check under review",
+        summary: "applicant.maritalStatus (18 errors), applicant.sex (16 errors), and applicant.hasNisNumber (15 errors) together generated 49 errors on Jobstart Plus. No decision exists on whether these are operationally required. Each is under review pending MDA confirmation.",
+        category: "field",
+        status: "review",
+        appliesTo: "Jobstart Plus",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "Jobstart Plus is the highest-error form overall with 140 errors. Three fields — marital status (18), sex (16), hasNisNumber (15) — contribute 49 of those errors and appear only on Jobstart. It is not confirmed whether the MDA uses marital status or sex for any operational purpose. hasNisNumber appears to be a yes/no eligibility gate placed inside applicant details rather than a screener step, making it a P-38 violation as well as a field worth questioning.",
+        decision: "No change yet, pending MDA confirmation. Questions to resolve: (1) Does the MDA use marital status or sex for any operational purpose (case management, correspondence, eligibility)? (2) Is hasNisNumber an eligibility check — and if so, should it move to a screener step per P-38 and FD-014? If no operational need is confirmed, these fields should be made optional or removed.",
+        rationale: "Unnecessary required fields add friction without value. 49 errors combined from three fields of unclear purpose is significant. hasNisNumber is particularly suspect — if it is functioning as an eligibility gate inside the form rather than before it, it violates both the service design principle and the P-38 pattern.",
+        components: null,
+        variations: [],
+        related: ["FD-014", "FD-019", "FD-022"]
+      },
+      {
+        id: "FD-022",
+        title: "applicant.citizenship used as mid-form eligibility gate on Youth opportunity forms",
+        summary: "applicant.citizenship generates 14 custom errors across 7 Youth opportunity forms. A custom error means the field failed a bespoke rule — citizenship is being used as an eligibility check placed inside the applicant details step, not before it. This is a specific violation of P-38.",
+        category: "structure",
+        status: "active",
+        appliesTo: "Youth opportunity forms (ydp, byac, yes, yar, cmc, pathways, cap, ceep)",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "applicant.citizenship produced 14 custom-type errors across Youth opportunity ydp (3), byac (3), yes (2), yar (2), cmc (1), pathways (1), ceep (1), cap (1). Custom errors indicate failed bespoke rules — in this case, a citizenship requirement (e.g. must be Barbadian citizen or CARICOM national). The check is embedded in the applicant details step, meaning users who are ineligible on citizenship grounds do not find out until after entering all their personal details.",
+        decision: "The citizenship eligibility check on Youth opportunity forms must be moved to a screener step before applicant details, in line with P-38 (FD-014). The screener should ask 'Are you a Barbadian citizen or CARICOM national?' and exit ineligible users to a clear information page before they enter any personal data.",
+        rationale: "A citizenship check placed after personal details is a direct P-38 violation. 14 custom errors across 7 forms with identical structure confirms this is a template-level issue (see FD-016). Moving the check to a screener eliminates these errors and prevents ineligible users from a frustrating mid-form rejection.",
+        components: null,
+        variations: [],
+        related: ["FD-014", "FD-016", "FD-017"]
+      },
+      {
+        id: "FD-021",
+        title: "Emergency contact step on Jobstart Plus generates 39 errors — review whether it is required",
+        summary: "The Emergency contact step on Jobstart Plus generated 39 errors in 30 days: emergency.email (21), emergency.telephoneNumber (12), emergency.relationship (6). It is not confirmed whether the MDA needs emergency contact data for a job placement programme. This step is under review.",
+        category: "structure",
+        status: "review",
+        appliesTo: "Jobstart Plus",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "The Emergency contact step is the third-highest error step on Jobstart Plus with 39 combined errors — more than the Applicant details step on many other forms. The step asks for an emergency contact's email, phone number, and relationship to the applicant. It is not confirmed whether this data is used operationally by the MDA. Emergency contact data is typically collected for in-person or residential programmes; its relevance to a digital job placement registration is unclear.",
+        decision: "No change yet, pending MDA confirmation. Question to resolve: does the MDA use emergency contact data from Jobstart Plus for any operational purpose? If not, the step should be removed. If confirmed necessary, the fields must be reviewed for hint text compliance (phone: FD-012) and whether all three fields need to be required.",
+        rationale: "A step generating 39 errors that may not be operationally necessary is the highest-priority structural review for Jobstart. Removing an unnecessary step would eliminate those errors entirely and reduce the form's length, which is already one of the longest in the programme.",
+        components: null,
+        variations: [],
+        related: ["FD-012", "FD-023"]
+      },
+      {
+        id: "FD-020",
+        title: "NRN hint text applies to all NRN fields, not just the applicant's own",
+        summary: "FD-011 established that applicant.idNumber requires the hint 'e.g. 970315-1234'. This applies equally to any other NRN field — including husband.idNumber (26 errors on Get marriage certificate) and wife.idNumber (5 errors). The hint is mandatory on every field collecting an NRN regardless of whose it is.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms with any NRN field",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "Get marriage certificate generated 26 errors on husband.idNumber and 5 on wife.idNumber — a combined 31 errors from NRN fields that are not the applicant's own. FD-011 established the mandatory hint for applicant.idNumber but did not explicitly extend it to third-party NRN fields. The same format (YYMMDD-XXXX) applies regardless of whose NRN is being collected.",
+        decision: "The hint text 'e.g. 970315-1234' is mandatory on every field collecting a National Registration Number, regardless of the field name or whose NRN it represents. This includes husband.idNumber, wife.idNumber, deceased.idNumber, or any other NRN field on any form.",
+        rationale: "The format ambiguity that causes errors on applicant.idNumber is identical for third-party NRN fields. husband.idNumber alone generated 26 errors — the same fix that applies to applicant NRN fields must be applied consistently across all of them.",
+        components: null,
+        variations: [],
+        related: ["FD-011", "FD-003"]
+      },
+      {
+        id: "FD-019",
+        title: "Whether title field should be required — pending MDA confirmation",
+        summary: "applicant.title is the 4th highest failing field — 50 errors across 5 forms in 30 days. It is not confirmed whether any MDA uses the title field for correspondence or case management. Until confirmed, the field remains required. If no operational need exists, it should be made optional or removed entirely.",
+        category: "field",
+        status: "review",
+        appliesTo: "All forms collecting applicant.title",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "applicant.title generated 50 errors across 5 forms: Jobstart plus programme (19), Get birth certificate (18), Get death certificate (9), Get marriage certificate (3), Apply for conductor licence (1). The errors are required-type — caused by an empty default dropdown option that can be submitted without a selection (see FD-018). Investigating the empty default raised the question of whether title is needed at all. Title does not help identify an applicant — NRN, date of birth, and full name do that. It adds friction and can be exclusionary. Notably, 30 of these 50 errors are on entitlement services (birth, death, marriage certificates) where the case for requiring title is even weaker. GOV.UK removed title from most government forms unless there is a clear, confirmed downstream use.",
+        decision: "No change yet — the field remains required pending MDA clarification. The question to resolve for each affected MDA: is the applicant's title used anywhere downstream, such as in formal correspondence or case management systems? If not, the field should be made optional or removed. This applies to all 5 forms listed above.",
+        rationale: "Collecting data that is not used is unnecessary friction and unnecessary data. 50 errors in 30 days — placing title in the top 5 failing fields — from a field of questionable operational value is a strong signal it should not be required. If MDAs cannot demonstrate a need for it, removing the required constraint reduces errors with no loss of service value.",
+        components: null,
+        variations: [
+          { title: "If MDA uses title for correspondence", text: "Keep the field but make it optional — not everyone has a conventional title, and omitting it from a letter is preferable to blocking submission." },
+          { title: "If MDA does not use title downstream", text: "Remove the field entirely, or at minimum change it to optional. Log the outcome as a resolved decision." }
+        ],
+        related: ["FD-018"]
+      },
+      {
+        id: "FD-018",
+        title: "Required dropdown fields must not have an empty default option",
+        summary: "Required dropdowns must never use a blank first option. A blank option can be submitted as an empty value, generating a validation error the user cannot understand. Use a clearly invalid placeholder such as 'Select a title' instead.",
+        category: "validation",
+        status: "active",
+        appliesTo: "All forms with required dropdown fields",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "A live review of the Jobstart Plus 'Tell us about yourself' step found that the title dropdown renders with a completely blank default option — no placeholder text is visible to the user. Submitting without selecting a value triggers a 'Title is required' error summary at the top of the page and an inline error below the field label. The error handling itself is correct; the problem is that the empty option is submittable and gives users no signal that a selection is needed before they attempt to continue.",
+        decision: "Required dropdown fields must never use a blank or empty first option. The default option must be a clearly invalid placeholder, such as 'Select a title', that cannot be submitted as a valid value. This applies to all required dropdowns, including title, parish, gender, and any other select field.",
+        rationale: "An empty default option is invisible as an error state — the field appears to have content, so users do not know they need to act on it. An invalid placeholder makes the unselected state obvious and is consistent with the approach already established for parish in FD-013.",
+        components: null,
+        variations: [
+          { title: "Optional dropdown fields", text: "Where a dropdown is genuinely optional, an empty or 'Not applicable' first option is acceptable. This decision applies only to fields marked as required." }
+        ],
+        related: ["FD-013", "FD-007"]
+      },
+      {
+        id: "FD-017",
+        title: "Eligibility removed from Jobstart at design lead direction — under review",
+        summary: "The eligibility screener was removed from Jobstart registration after the original V0 design included it. July 2026 validation data shows this contributed to custom errors — ineligible users completing personal detail steps before being rejected. The decision to reinstate is under review.",
+        category: "structure",
+        status: "review",
+        appliesTo: "Jobstart Plus registration",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "The original Jobstart V0 flow included an eligibility screener before applicant details, with a clear exit path for ineligible users. This was removed at the direction of the design lead, who considered the start page and entry page sufficient to communicate eligibility requirements.",
+        decision: "The eligibility screener was removed from the approved Jobstart flow. This decision is now under review following July 2026 validation data showing custom validation errors consistent with ineligible users reaching and failing at personal detail steps.",
+        rationale: "A start page informs users what a service is for — it does not prevent ineligible users from entering their details. Validation data confirms the gap. Recommendation is to reinstate the screener in line with P-38 (FD-014).",
+        components: null,
+        variations: [],
+        related: ["FD-014", "FD-005"]
+      },
+      {
+        id: "FD-016",
+        title: "Form templates must be QA reviewed before deriving multiple forms",
+        summary: "Any design template used to generate multiple forms must be reviewed against the pattern library before any form is derived from it. The Youth Opportunity template propagated structural errors — missing hints, misplaced eligibility — to 10+ forms before identification in live validation data.",
+        category: "process",
+        status: "active",
+        appliesTo: "All form templates",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "Youth Opportunity programme forms shared a common Figma template. That template contained errors — missing field hint text, no eligibility screener — which propagated identically to all derived forms. This was only identified through live validation error tracking in July 2026.",
+        decision: "Any template used to generate multiple forms must pass a QA review against the pattern library before any form is derived from it. The review must cover: field hint text on all format-sensitive fields, required field indicators, eligibility placement against P-38, and declaration checkbox tap target size.",
+        rationale: "Template errors multiply. Fixing a template fixes all derived forms at once. Releasing a template without review means the same error appears in every form built from it — as seen with Youth Opportunity.",
+        components: null,
+        variations: [],
+        related: ["FD-010"]
+      },
+      {
+        id: "FD-015",
+        title: "Declaration checkbox must meet 44×44px minimum tap target",
+        summary: "The declaration checkbox must be at least 44×44px in tap target size and clearly visible on mobile screens. The declaration.confirmed field was a top-10 failing field — 7 errors across 4 forms — because users could not find or tap the checkbox.",
+        category: "validation",
+        status: "active",
+        appliesTo: "All forms with declaration step",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "declaration.confirmed appeared in the top-10 failing fields — 7 errors across 4 forms. The checkbox is the final step before submission; a failure here is a hard block on completion.",
+        decision: "The declaration checkbox must have a minimum tap target of 44×44px. The checkbox and its associated label must be clearly visible at mobile screen sizes. Implementation must be verified on at least one mobile device before a form is published.",
+        rationale: "A checkbox that cannot be tapped prevents submission entirely. 44×44px is the WCAG 2.5.5 minimum for touch targets. Users who cannot complete this step lose all form data with no clear path forward.",
+        components: null,
+        variations: [],
+        related: ["FD-004", "FD-005"]
+      },
+      {
+        id: "FD-014",
+        title: "Eligibility screener must precede applicant details on programme forms",
+        summary: "Any form where a user must qualify for a service must include an eligibility screener before applicant details (P-38). Ineligible users must be told they cannot apply before entering any personal information.",
+        category: "structure",
+        status: "active",
+        appliesTo: "Programme forms (Jobstart Plus, Community Sports, Youth Opportunity, Conductor Licence)",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "July 2026 validation data showed that 'custom' errors — eligibility failures — were occurring after users had already entered personal details, meaning ineligible users completed name, date of birth, NRN, and contact steps before being rejected. This pattern is formalised as P-38 in the pattern library.",
+        decision: "For any service with qualifying criteria (age, residency, employment status, programme eligibility), an eligibility screener page must appear before applicant details. Ineligible users must exit to a clear information page explaining why and what to do instead.",
+        rationale: "Users should not be asked to enter personal information before knowing whether they qualify. Post-detail rejection creates friction, wastes the user's time, and generates avoidable validation errors. The P-38 pattern formalises this requirement across all programme forms.",
+        components: null,
+        variations: [
+          { title: "Universal entitlement services", text: "Forms for services available to all eligible residents (e.g. birth certificate, death certificate) do not require a screener. P-38 applies only where there are specific qualifying criteria beyond basic identity." }
+        ],
+        related: ["FD-005", "FD-017"]
+      },
+      {
+        id: "FD-013",
+        title: "Postcode field requires hint text; parish dropdown requires an invalid default placeholder",
+        summary: "All postcode fields must display the hint 'e.g. BB11000'. All parish dropdowns must use a clearly invalid first option such as 'Select a parish'. Together, postcode and parish generated 89 errors across live forms in July 2026.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms with address fields",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "Postcode generated 42 errors across 3 forms; parish generated 47 errors in July 2026. Neither field communicated the expected format or prevented accidental default selection.",
+        decision: "All postcode fields must display the hint text 'e.g. BB11000' below the input label. All parish dropdowns must use a clearly invalid default option — such as 'Select a parish' — as the first option, never a pre-selected valid parish value.",
+        rationale: "The BB + 5-digit format is not universally known. A pre-selected parish creates silent incorrect submissions. Both errors are preventable with minimal content changes and no engineering work beyond updating hint copy.",
+        components: null,
+        variations: [],
+        related: ["FD-007", "FD-011"]
+      },
+      {
+        id: "FD-012",
+        title: "Telephone fields must display a Barbados format hint",
+        summary: "All telephone and mobile fields must include the hint text 'e.g. 246-430-1234'. Telephone was a top-10 failing field — 45 errors across live forms, 33 from a single form.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms with telephone or mobile fields",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "Telephone generated 45 validation errors in July 2026 — 33 from Get Birth Certificate alone. No hint text was present on any telephone field in the live forms at the time.",
+        decision: "All telephone and mobile number fields must display the hint text 'e.g. 246-430-1234' immediately below the label. Where a field also accepts international numbers, a note about including the country code must be added alongside the hint.",
+        rationale: "Without a format hint, users enter numbers without the area code, with spaces, or in various non-standard formats. A single line of hint copy prevents the majority of these errors.",
+        components: null,
+        variations: [],
+        related: ["FD-011"]
+      },
+      {
+        id: "FD-011",
+        title: "NRN field hint text is mandatory",
+        summary: "Every National Registration Number field must display the hint text 'e.g. 970315-1234' immediately below the label. NRN was the #1 failing field across all live forms — 76 errors across 5 forms in 30 days.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms with NRN field",
+        lastUpdated: "11 Jul 2026",
+        updatedBy: "Amoge",
+        context: "NRN was the highest-error field in July 2026 validation data — 76 errors across 5 forms. The YYMMDD-XXXX format was not communicated anywhere on the forms at the time. FD-003 established the canonical label; no decision existed for hint text.",
+        decision: "Every NRN field must include the hint text 'e.g. 970315-1234' immediately below the label. This hint is mandatory. Any form currently live without this hint must be updated as a priority fix.",
+        rationale: "The YYMMDD-XXXX structure is not obvious to applicants. Validation data confirms that without a hint, users enter NRNs in a wide variety of non-standard formats. This is the single highest-impact content fix available — 76 errors preventable with one line of copy per form.",
+        components: null,
+        variations: [
+          { title: "Back-end normalisation", text: "In addition to the hint, forms should consider accepting common input variants (e.g. with spaces, without hyphen) and normalising to the canonical YYMMDD-XXXX format server-side, so that minor formatting differences do not cause hard rejections." }
+        ],
+        related: ["FD-003"]
+      },
+      {
+        id: "FD-010",
+        title: "Documenting decisions centrally",
+        summary: "Design principles and decisions must be documented in a central, accessible place — not left only in Slack threads or buried in prototypes. People and tools cannot infer all constraints from prototypes alone.",
+        category: "process",
+        status: "active",
+        appliesTo: "All MDAs",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Gavin",
+        context: "Important design principles and decisions were being made in Slack threads and prototypes but not recorded anywhere accessible to the whole team or future collaborators.",
+        decision: "Document design principles and decisions in a central, easily accessible place rather than only in Slack threads or prototypes.",
+        rationale: "People and tools cannot infer all constraints from prototypes alone. Centralised documentation reduces confusion, prevents duplicated discussion, and keeps the whole team aligned.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-009",
+        title: "MDA email only sent after payment is confirmed",
+        summary: "For forms with a payment step, the notification email to the MDA is not sent until the payment provider confirms the transaction was successful. This prevents MDAs from acting on submissions where payment was never completed.",
+        category: "email",
+        status: "active",
+        appliesTo: "Forms with payment",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Shannon",
+        context: "For forms that require a payment, there was a question about when to send the MDA notification — immediately on form submission, or only after payment succeeds.",
+        decision: "Do not send the MDA email until payment has been successfully completed and confirmed by the third-party payment provider.",
+        rationale: "Avoids notifying MDAs about submissions where the user has not completed payment, keeping MDA notifications aligned with successful, actionable submissions only.",
+        components: null,
+        variations: [],
+        related: ["FD-001"]
+      },
+      {
+        id: "FD-008",
+        title: "Form field labels use sentence case only",
+        summary: "All form field labels use sentence case — never Title Case. Sentence case is easier to read and better for accessibility, particularly for users with cognitive or reading difficulties.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Amy",
+        context: "There was inconsistency in how field labels were capitalised across forms, with some using Title Case and others using sentence case.",
+        decision: "Use sentence case only for all form field labels. Title Case is not permitted.",
+        rationale: "Sentence case improves readability and is better for accessibility, especially for users with cognitive or reading difficulties. It also aligns with GOV.UK and GDS conventions.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-007",
+        title: "Shared lookup tables for common dropdown lists",
+        summary: "Common dropdown options like parishes, countries, titles, and schools are stored in a central lookup table and fetched via API at runtime — no hardcoded lists per form. This keeps option lists consistent across all forms and easy to maintain centrally.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "2 Apr 2026",
+        updatedBy: "Laron",
+        context: "Common dropdown lists (parishes, countries, titles, schools) were at risk of being hardcoded per form, which would cause inconsistency across the platform.",
+        decision: "Use a central lookup table in the database and a small API endpoint so forms fetch shared lists at runtime. No hardcoded option lists per form. Implemented using existing migration and API patterns — no new infrastructure needed.",
+        rationale: "Centralising list data ensures the same options appear consistently across all forms and makes updates easier to manage in one place.",
+        components: null,
+        variations: [],
+        related: ["FD-003"]
+      },
+      {
+        id: "FD-006",
+        title: "Alignment and Kickoff calls serve distinct purposes",
+        summary: "MDA engagement uses two separate call types: an Alignment Call for high-level buy-in with the MDA, and a Kickoff Call with Digital Champions and forms processors for prototype walkthroughs and internal process questions. Mixing the two caused confusion about what to discuss when.",
+        category: "process",
+        status: "active",
+        appliesTo: "All MDAs",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Leann",
+        context: "The prototyping team needed a clear structure for engaging MDAs, but 'alignment' and 'kickoff' were being used inconsistently, leading to wrong people in wrong calls.",
+        decision: "The Alignment Call is the first call the prototyping team has with the MDA — high-level, no prototype walkthrough. The Kickoff Call is with the Digital Champion and forms processors to walk through prototypes one by one. Questions about internal processes belong in the Kickoff Call, not the Alignment Call.",
+        rationale: "Separating high-level alignment from detailed process walkthroughs makes it clearer what to ask when and who should be in each session.",
+        components: null,
+        variations: [],
+        related: []
+      },
+      {
+        id: "FD-005",
+        title: "Declaration page comes after check answers",
+        summary: "The declaration screen is placed after the check answers page so users can review and correct their submission before confirming. Placing it before check answers would have users agreeing to something they haven't yet had a chance to review.",
+        category: "structure",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "2 Apr 2026",
+        updatedBy: "Kristin",
+        context: "It was unclear whether the declaration page should appear before or after the check answers page in the form flow.",
+        decision: "The declaration page always appears after the check answers page. Prototypes were updated to reflect this order.",
+        rationale: "Users should first see all their answers together, correct anything if needed, and only then confirm via the declaration. Agreeing before reviewing creates a poor experience and potential accuracy issues.",
+        components: null,
+        variations: [],
+        related: ["FD-004"]
+      },
+      {
+        id: "FD-001",
+        title: "Email components by recipient type",
+        summary: "MDA and applicant confirmation emails carry different content. MDA emails include full PII and submitted data for case management; applicant emails show only a reference number, service name, next steps, and a contact point to avoid unnecessary PII exposure.",
+        category: "email",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "1 Apr 2026",
+        updatedBy: "Amoge, Leann, Adunni, Gavin, Shannon",
+        context: "MDA and applicant emails serve different purposes. MDA emails are internal operational tools; applicant emails are public-facing receipts.",
+        decision: "MDA emails include full applicant PII and all submitted data. Applicant emails include only a confirmation number, service name, next steps, and a contact point.",
+        rationale: "MDA staff need identifiers to locate submissions in case management systems. Reproducing data in applicant emails creates unnecessary PII exposure risk.",
+        components: [
+          { component: "Submission reference number", description: "Unique identifier generated on successful submission", mda: { status: "required" }, applicant: { status: "required" }, notes: "Primary lookup key for case management" },
+          { component: "Applicant full name", description: "Legal name as entered on the form", mda: { status: "required" }, applicant: { status: "excluded", note: "Confirmed in salutation only" }, notes: "" },
+          { component: "National Registration Number (NRN)", description: "Applicant's NRN as submitted", mda: { status: "required" }, applicant: { status: "excluded" }, notes: "PII — MDA use only" },
+          { component: "Date of birth", description: "As entered on the form", mda: { status: "required" }, applicant: { status: "excluded" }, notes: "PII — MDA use only" },
+          { component: "Service / form name", description: "Human-readable name of the form submitted", mda: { status: "required" }, applicant: { status: "required" }, notes: "" },
+          { component: "Submission date and time", description: "ISO timestamp of successful submission", mda: { status: "required" }, applicant: { status: "required" }, notes: "Atlantic Standard Time (UTC−4)" },
+          { component: "Full submitted data", description: "All field values as submitted", mda: { status: "required" }, applicant: { status: "excluded" }, notes: "Structured data for case intake; not appropriate for applicant receipt" },
+          { component: "Payment details", description: "Amount, method, and transaction reference", mda: { status: "conditional", note: "Only for forms with a payment step" }, applicant: { status: "conditional", note: "Confirmation amount and reference only" }, notes: "Do not include full card details in any email" },
+          { component: "Next steps / instructions", description: "Plain-language guidance on what happens after submission", mda: { status: "excluded" }, applicant: { status: "required" }, notes: "Drafts held in content library per service" },
+          { component: "MDA contact point", description: "Phone number or email for applicant queries", mda: { status: "excluded" }, applicant: { status: "required" }, notes: "Must match the contact on the service's public page" }
+        ],
+        variations: [
+          { title: "Payment flows", text: "Where a form includes a payment step, both MDA and applicant emails include a payment confirmation block (transaction ID, amount, date). Full card details are never included in any email." },
+          { title: "Rejection or incomplete application", text: "If a submission is rejected or flagged as incomplete, the applicant email replaces 'next steps' with a plain-language explanation and a resubmission link. MDA email includes the rejection reason code." }
+        ],
+        related: []
+      },
+      {
+        id: "FD-002",
+        title: "Date format is DD/MM/YYYY",
+        summary: "All date fields across every form use DD/MM/YYYY, implemented as three separate day / month / year inputs. This is the Barbados standard and removes the inconsistency seen across earlier form versions.",
+        category: "field",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "Date fields were rendered inconsistently across forms, with some using MM/DD/YYYY and others using free-text input.",
+        decision: "All date fields use DD/MM/YYYY across all forms, implemented as three separate numeric inputs (day, month, year).",
+        rationale: "DD/MM/YYYY is the Barbados standard. Consistency across forms reduces data entry errors and simplifies downstream validation.",
+        components: null,
+        variations: [],
+        related: ["FD-003"]
+      },
+      {
+        id: "FD-003",
+        title: "NRN has a canonical label and validation pattern",
+        category: "field",
+        summary: "The National Registration Number field must always be labelled \"National Registration Number (NRN)\" — no other label variants are allowed. This replaces three different labels that existed across 9 forms, and enables consistent cross-form data matching.",
+        status: "active",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "NRN appeared under three different labels across 9 forms: 'ID number / NRN', 'National Registration Number', and 'ID number'.",
+        decision: "Canonical label is 'National Registration Number (NRN)'. No alternative labels are permitted.",
+        rationale: "A single label removes ambiguity for applicants and enables consistent cross-form data matching in downstream systems.",
+        components: null,
+        variations: [
+          { title: "Forms using 'ID number' alone", text: "Any form currently using 'ID number' as the sole label must be updated to the canonical label before publishing. This affects approximately 4 forms in the current backlog." }
+        ],
+        related: ["FD-002"]
+      },
+      {
+        id: "FD-004",
+        title: "Declaration uses a checkbox, not a signature",
+        summary: "Digital declaration sections use a mandatory checkbox (not a signature field). The checkbox replays the applicant's name and submission date in the statement. This is provisional — it has not yet been confirmed with MDAs that a checkbox meets their legal requirements.",
+        category: "structure",
+        status: "review",
+        appliesTo: "All forms",
+        lastUpdated: "4 Apr 2025",
+        updatedBy: "Amoge",
+        context: "Paper forms use a signature block. The digital prototype replaced this with a checkbox that replays the applicant's name and submission date.",
+        decision: "Declaration sections use a mandatory checkbox with a plain-language statement that includes the applicant's name and the submission date. No handwritten or digital signature capture.",
+        rationale: "Signature capture is technically complex and inconsistent across devices. A checkbox captures the same legal intent accessibly. This decision is provisional pending MDA validation.",
+        components: null,
+        variations: [
+          { title: "Pending MDA legal validation", text: "It has not yet been confirmed whether a checkbox declaration meets the legal requirements currently satisfied by a wet signature. This decision is under review with the relevant MDAs and will be updated once confirmed." }
+        ],
+        related: []
+      }
+    ];
+
+    /* ═══════════════════════════════════════════════════
+       RENDERING — do not edit below this line
+    ═══════════════════════════════════════════════════ */
+
+    /* ─────────────────────────────────────────
+       DB HELPERS — map between JS camelCase and Supabase snake_case
+    ───────────────────────────────────────── */
+    function dbToJs(row) {
+      return {
+        id:          row.id,
+        title:       row.title,
+        summary:     row.summary     || '',
+        category:    row.category,
+        status:      row.status,
+        appliesTo:   row.applies_to,
+        lastUpdated: row.last_updated,
+        updatedBy:   row.updated_by,
+        context:     row.context,
+        decision:    row.decision,
+        rationale:   row.rationale,
+        components:  row.components  || null,
+        variations:  row.variations  || [],
+        related:     row.related     || []
+      };
+    }
+
+    function jsToDb(d) {
+      return {
+        id:           d.id,
+        title:        d.title,
+        summary:      d.summary,
+        category:     d.category,
+        status:       d.status,
+        applies_to:   d.appliesTo,
+        last_updated: d.lastUpdated,
+        updated_by:   d.updatedBy,
+        context:      d.context,
+        decision:     d.decision,
+        rationale:    d.rationale,
+        components:   d.components,
+        variations:   d.variations,
+        related:      d.related
+      };
+    }
+
+    /* ─────────────────────────────────────────
+       LOAD DECISIONS — from Supabase or seed data
+    ───────────────────────────────────────── */
+    function getActiveFilter() {
+      const btn = document.querySelector(".filter-btn.active");
+      return btn ? btn.dataset.filter : "all";
+    }
+
+    function showBanner(msg, colour) {
+      let b = document.getElementById("db-banner");
+      if (!b) {
+        b = document.createElement("div");
+        b.id = "db-banner";
+        b.style.cssText = "position:fixed;bottom:1rem;right:1rem;padding:10px 16px;border-radius:6px;font-size:0.82rem;font-weight:600;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.15);";
+        document.body.appendChild(b);
+      }
+      b.style.background = colour === "green" ? "#e9f9f3" : colour === "red" ? "#fff0f0" : "#e5e9f2";
+      b.style.color      = colour === "green" ? "#00654a" : colour === "red" ? "#a42c2c" : "#00267f";
+      b.style.border     = `1px solid ${colour === "green" ? "#a5e5ce" : colour === "red" ? "#ffc4c4" : "#99a8cc"}`;
+      b.textContent = msg;
+      clearTimeout(b._t);
+      b._t = setTimeout(() => b.remove(), 4000);
+    }
+
+    async function seedDatabase() {
+      const rows = SEED_DECISIONS.map(jsToDb);
+      const { error } = await db.from('decisions').insert(rows);
+      if (error) throw error;
+    }
+
+    async function loadDecisions() {
+      // Offline mode — Supabase not configured yet
+      if (!IS_CONFIGURED) {
+        DECISIONS = [...SEED_DECISIONS];
+        renderSections(getActiveFilter());
+        renderTimeline();
+        renderStats();
+        return;
+      }
+
+      try {
+        const { data, error } = await db
+          .from('decisions')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+
+        if (data.length === 0) {
+          // First run — seed the database with existing decisions
+          await seedDatabase();
+          return loadDecisions();
+        }
+
+        DECISIONS = data.map(dbToJs);
+        renderSections(getActiveFilter());
+        renderTimeline();
+        renderStats();
+        showBanner("✓ Connected to Supabase", "green");
+      } catch (err) {
+        console.error("Supabase error:", err);
+        // Fall back to seed data so the page still works
+        DECISIONS = [...SEED_DECISIONS];
+        renderSections(getActiveFilter());
+        renderTimeline();
+        renderStats();
+        showBanner("⚠ Database unavailable — showing local data", "red");
+      }
+    }
+
+    /* ─────────────────────────────────────────
+       STATS — status overview cards
+    ───────────────────────────────────────── */
+    function renderStats() {
+      const root = document.getElementById("stats-root");
+      if (!root) return;
+      const total      = DECISIONS.length;
+      const active     = DECISIONS.filter(d => d.status === "active").length;
+      const review     = DECISIONS.filter(d => d.status === "review").length;
+      const superseded = DECISIONS.filter(d => d.status === "superseded").length;
+
+      // card(label, count, bg, color, border, filterKey)
+      const card = (label, count, bg, color, border, key) => {
+        const isOn = currentStatusFilter === key;
+        const cardBg  = isOn ? color   : bg;
+        const cardTxt = isOn ? "#fff"  : color;
+        const cardBdr = isOn ? color   : border;
+        const cursor  = key ? "pointer" : "default";
+        const onclick = key ? `onclick="setStatusFilter('${key}')"` : `onclick="setStatusFilter(null)"`;
+        return `<div ${onclick} style="background:${cardBg}; border:2px solid ${cardBdr}; border-radius:6px; padding:10px 18px; min-width:90px; text-align:center; flex:1; max-width:140px; cursor:${cursor}; transition:all 0.15s; user-select:none;">
+          <div style="font-size:1.6rem; font-weight:700; color:${cardTxt}; line-height:1.1;">${count}</div>
+          <div style="font-size:0.72rem; color:${cardTxt}; margin-top:3px; font-weight:500;">${label}</div>
+        </div>`;
+      };
+
+      root.innerHTML =
+        card("Total",        total,      "#e5e9f2", "#00267f", "#99a8cc", null) +
+        card("Active",       active,     "#e9f9f3", "#00654a", "#a5e5ce", "active") +
+        card("Under review", review,     "#FEF3E2", "#92400E", "#FDE68A", "review") +
+        card("Superseded",   superseded, "#F3F4F6", "#6B7280", "#D1D5DB", "superseded");
+    }
+
+    const CATEGORY_LABELS = {
+      email:       "Email decisions",
+      field:       "Field decisions",
+      validation:  "Validation decisions",
+      structure:   "Structure decisions",
+      conditional: "Conditional decisions",
+      process:     "Process decisions"
+    };
+
+    const CATEGORY_ORDER = ["email","field","validation","structure","conditional","process"];
+
+    function statusLabel(s) {
+      return s === "review" ? "Under review" : s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    function categoryLabel(c) {
+      return c.charAt(0).toUpperCase() + c.slice(1);
+    }
+
+    function cellStatus({ status, note }) {
+      const cls  = { required:"cell-required", excluded:"cell-excluded", conditional:"cell-conditional" };
+      const dots = { required:"background:#0e5f64", excluded:"background:#a42c2c", conditional:"background:#D97706" };
+      const lbl  = { required:"Required", excluded:"Excluded", conditional:"Conditional" };
+      const noteHtml = note ? `<span class="cell-note">${note}</span>` : "";
+      return `<div class="${cls[status]}"><span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;${dots[status]};display:inline-block;"></span><span>${lbl[status]}${noteHtml}</span></div>`;
+    }
+
+    function renderComponents(components) {
+      if (!components || !components.length) return "";
+      const rows = components.map(c => `
+        <tr>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top;"><strong>${c.component}</strong></td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top; font-size:0.85rem; color:#595959;">${c.description}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top;">${cellStatus(c.mda)}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top;">${cellStatus(c.applicant)}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid #e0e4e9; vertical-align:top; font-size:0.82rem; color:#595959;">${c.notes || "—"}</td>
+        </tr>`).join("");
+      return `
+        <div style="display:flex; gap:16px; margin-bottom:10px; font-size:0.82rem; flex-wrap:wrap;">
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600;color:#0e5f64;"><span style="width:8px;height:8px;border-radius:50%;background:#0e5f64;display:inline-block;"></span>Required</span>
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600;color:#a42c2c;"><span style="width:8px;height:8px;border-radius:50%;background:#a42c2c;display:inline-block;"></span>Excluded</span>
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600;color:#D97706;"><span style="width:8px;height:8px;border-radius:50%;background:#D97706;display:inline-block;"></span>Conditional</span>
+        </div>
+        <div style="overflow-x:auto; margin-bottom:1rem;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.875rem; min-width:640px;">
+            <thead>
+              <tr style="background:#00267f; color:#fff;">
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Component</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Description</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">MDA email</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Applicant email</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:500;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderVariations(variations) {
+      if (!variations || !variations.length) return "";
+      const blocks = variations.map(v => `
+        <div style="border-left:3px solid #99a8cc; padding:10px 14px; margin-bottom:8px; background:#f8f9fc; border-radius:0 4px 4px 0;">
+          <div style="font-size:0.875rem; font-weight:700; margin-bottom:4px;">${v.title}</div>
+          <div style="font-size:0.875rem; color:#595959;">${v.text}</div>
+        </div>`).join("");
+      return `<div style="margin-bottom:1rem;">${blocks}</div>`;
+    }
+
+    function renderRelated(related) {
+      if (!related || !related.length) return "";
+      const pills = related.map(id =>
+        `<button onclick="jumpTo('${id}')" style="background:#eaf9f9; color:#0e5f64; font-family:monospace; font-size:0.75rem; font-weight:600; padding:2px 10px; border-radius:999px; border:none; cursor:pointer;">${id}</button>`
+      ).join("");
+      return `<span style="font-size:0.75rem; color:#595959; margin-right:4px;">Related:</span>${pills}`;
+    }
+
+    function renderDecision(d) {
+      return `
+        <div class="decision-card" id="card-${d.id}" data-category="${d.category}"
+          style="background:#fff; border:1px solid #e0e4e9; border-radius:4px; margin-bottom:8px; overflow:hidden;">
+
+          <!-- COLLAPSED HEADER -->
+          <div onclick="toggleCard('${d.id}')"
+            style="display:grid; grid-template-columns:56px 1fr auto auto 32px; align-items:center; gap:12px; padding:14px 16px; cursor:pointer;">
+            <span style="font-family:monospace; font-size:0.7rem; color:#595959; white-space:nowrap;">${d.id}</span>
+            <div style="min-width:0;">
+              <span style="font-size:0.95rem; font-weight:700; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.title}</span>
+              <div style="font-size:0.75rem; color:#595959; margin-top:2px;">${d.appliesTo} · ${d.lastUpdated}</div>
+            </div>
+            <span class="badge badge-${d.category}" style="display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;">${categoryLabel(d.category)}</span>
+            <span class="badge badge-${d.status}" style="display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:600; white-space:nowrap;">${statusLabel(d.status)}</span>
+            <span class="chevron" style="color:#595959; display:flex; align-items:center; justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+
+          <!-- EXPANDED BODY -->
+          <div class="decision-body" style="padding:0 16px 16px;">
+
+            <!-- SUMMARY CALLOUT -->
+            <div style="background:#eaf9f9; border-left:4px solid #30c0c8; border-radius:0 4px 4px 0; padding:12px 16px; margin-bottom:16px;">
+              <p style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#0e5f64; margin-bottom:4px;">Summary</p>
+              <p style="font-size:0.9rem; color:#0e5f64;">${d.summary}</p>
+            </div>
+
+            <!-- CONTEXT / DECISION / RATIONALE GRID -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #e0e4e9; border-radius:4px; overflow:hidden; margin-bottom:16px;">
+              <div style="padding:12px 14px; border-right:1px solid #e0e4e9;">
+                <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#595959; margin-bottom:6px;">Context</div>
+                <div style="font-size:0.82rem;">${d.context}</div>
+              </div>
+              <div style="padding:12px 14px; border-right:1px solid #e0e4e9;">
+                <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#595959; margin-bottom:6px;">Decision</div>
+                <div style="font-size:0.82rem;">${d.decision}</div>
+              </div>
+              <div style="padding:12px 14px;">
+                <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#595959; margin-bottom:6px;">Rationale</div>
+                <div style="font-size:0.82rem;">${d.rationale}</div>
+              </div>
+            </div>
+
+            ${renderComponents(d.components)}
+            ${renderVariations(d.variations)}
+
+            <!-- FOOTER ROW -->
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:12px; border-top:1px solid #e0e4e9;">
+              ${renderRelated(d.related)}
+              <span style="margin-left:auto; font-family:monospace; font-size:0.75rem; color:#595959;">${d.lastUpdated} · ${d.updatedBy}</span>
+              <button onclick="editDecision('${d.id}'); event.stopPropagation();"
+                style="background:#fff; border:1px solid #99a8cc; border-radius:3px; padding:3px 12px; font-family:Figtree,sans-serif; font-size:0.75rem; color:#595959; cursor:pointer; flex-shrink:0;">
+                ✏ Edit
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderSections(filter) {
+      const root = document.getElementById("decisions-root");
+      root.innerHTML = "";
+      let total = 0;
+
+      CATEGORY_ORDER.forEach(cat => {
+        const allInCat = DECISIONS.filter(d => d.category === cat);
+        if (!allInCat.length) return;
+        // Apply status filter if set
+        const decisions = currentStatusFilter
+          ? allInCat.filter(d => d.status === currentStatusFilter)
+          : allInCat;
+        const catVisible = filter === "all" || filter === cat;
+        const visible    = catVisible && decisions.length > 0;
+
+        const section = document.createElement("div");
+        section.dataset.category = cat;
+        section.style.display = visible ? "" : "none";
+        if (collapsedSections.has(cat)) section.classList.add("section-collapsed");
+
+        const decisionsHtml = decisions.map(d => renderDecision(d)).join("");
+        section.innerHTML = `
+          <div class="section-heading" onclick="toggleSection('${cat}')">
+            <span class="section-chevron">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <h2 id="section-${cat}" style="font-size:1.15rem; font-weight:700; color:#00267f; margin:0;">${CATEGORY_LABELS[cat]}</h2>
+            <span style="font-size:0.75rem; color:#595959; font-family:monospace; margin-left:4px;">${decisions.length}${allInCat.length !== decisions.length ? ' / ' + allInCat.length : ''}</span>
+          </div>
+          <div class="section-decisions">${decisionsHtml}</div>`;
+        root.appendChild(section);
+
+        if (visible) {
+          total += decisions.length;
+        }
+      });
+
+      const countEl = document.getElementById("filter-count");
+      if (countEl) countEl.textContent = `(${total} of ${DECISIONS.length})`;
+    }
+
+    function toggleCard(id) {
+      document.getElementById(`card-${id}`).classList.toggle("open");
+    }
+
+    function jumpTo(id) {
+      setFilter("all");
+      setTimeout(() => {
+        const card = document.getElementById(`card-${id}`);
+        if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+      }, 50);
+    }
+
+    function setFilter(filter) {
+      document.querySelectorAll(".filter-btn").forEach(btn => {
+        const active = btn.dataset.filter === filter;
+        btn.classList.toggle("active", active);
+        btn.style.background    = active ? "#00267f" : "#fff";
+        btn.style.color         = active ? "#fff"    : "#00267f";
+        btn.style.borderColor   = active ? "#00267f" : "#99a8cc";
+      });
+      renderSections(filter);
+      renderStats();
+    }
+
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentStatusFilter = null; // clear status filter when using category buttons
+        setFilter(btn.dataset.filter);
+      });
+    });
+
+    loadDecisions();
+
+    /* ─────────────────────────────────────────
+       ACTIVITY TIMELINE
+    ───────────────────────────────────────── */
+    function renderTimeline() {
+      const root = document.getElementById("timeline-root");
+      if (!root) return;
+
+      // Sort decisions newest-first (parse "4 Apr 2025" style dates)
+      const sorted = [...DECISIONS].sort((a, b) => {
+        return new Date(b.lastUpdated) - new Date(a.lastUpdated);
+      });
+
+      const statusDot = { active:"#0e5f64", review:"#D97706", superseded:"#6B7280" };
+      const statusLabel = { active:"Active", review:"Under review", superseded:"Superseded" };
+
+      root.innerHTML = sorted.map(d => {
+        const wasEdited = editedIds.has(d.id);
+        const editedBadge = wasEdited
+          ? `<span style="display:inline-block; padding:1px 7px; border-radius:999px; font-size:0.68rem; font-weight:600; background:#e5e9f2; color:#00267f;">edited</span>`
+          : "";
+        // Truncate long author names
+        const author = d.updatedBy || "";
+        const authorDisplay = author.length > 28 ? author.slice(0, 26) + "…" : author;
+        return `
+        <div style="display:flex; gap:10px; padding-bottom:1rem; margin-bottom:1rem; border-bottom:1px solid #f0f1f3; align-items:flex-start;">
+          <span style="width:9px; height:9px; border-radius:50%; background:${statusDot[d.status] || '#99a8cc'}; display:inline-block; flex-shrink:0; margin-top:5px;"></span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.7rem; color:#9ca3af; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${d.id} · ${d.lastUpdated}
+            </div>
+            <div style="font-weight:600; font-size:0.875rem; margin-bottom:4px; line-height:1.3; color:#0e5f64; cursor:pointer; text-decoration:underline;" onclick="jumpTo('${d.id}')">${d.title}</div>
+            <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+              <span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.7rem; font-weight:600;
+                background:${d.status==='active'?'#e9f9f3':d.status==='review'?'#FEF3E2':'#F3F4F6'};
+                color:${d.status==='active'?'#00654a':d.status==='review'?'#92400E':'#6B7280'};">${statusLabel[d.status]}</span>
+              ${editedBadge}
+              <span style="font-size:0.7rem; color:#9ca3af;" title="${author}">${authorDisplay}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    /* ─────────────────────────────────────────
+       NEW DECISION MODAL
+    ───────────────────────────────────────── */
+    function openModal() {
+      const overlay = document.getElementById("modal-overlay");
+      overlay.style.display = "flex";
+      document.body.style.overflow = "hidden";
+      document.getElementById("f-title").focus();
+    }
+
+    function resetModal() {
+      currentEditId = null;
+      document.getElementById("modal-title").textContent      = "Log a new decision";
+      document.getElementById("modal-submit-btn").textContent = "Save decision";
+      document.getElementById("decision-form").reset();
+      document.getElementById("form-error").style.display = "none";
+    }
+
+    function closeModal(e) {
+      if (e && e.target !== document.getElementById("modal-overlay")) return;
+      document.getElementById("modal-overlay").style.display = "none";
+      document.body.style.overflow = "";
+      resetModal();
+    }
+
+    function editDecision(id) {
+      const d = DECISIONS.find(dec => dec.id === id);
+      if (!d) return;
+      currentEditId = id;
+      document.getElementById("modal-title").textContent      = `Edit decision — ${d.id}`;
+      document.getElementById("modal-submit-btn").textContent = "Update decision";
+      document.getElementById("f-title").value    = d.title    || "";
+      document.getElementById("f-category").value = d.category || "";
+      document.getElementById("f-status").value   = d.status   || "active";
+      document.getElementById("f-author").value   = d.updatedBy|| "";
+      document.getElementById("f-context").value  = d.context  || "";
+      document.getElementById("f-decision").value = d.decision || "";
+      document.getElementById("f-rationale").value= d.rationale|| "";
+      document.getElementById("f-summary").value  = d.summary  || "";
+      document.getElementById("f-applies").value  = d.appliesTo|| "";
+      document.getElementById("form-error").style.display = "none";
+      openModal();
+    }
+
+    // Close on Escape
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        document.getElementById("modal-overlay").style.display = "none";
+        document.body.style.overflow = "";
+        resetModal();
+      }
+    });
+
+    function nextId() {
+      const nums = DECISIONS.map(d => parseInt(d.id.replace("FD-", ""), 10));
+      return "FD-" + String(Math.max(...nums) + 1).padStart(3, "0");
+    }
+
+    function todayLabel() {
+      return new Date().toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
+    }
+
+    async function submitDecision(e) {
+      e.preventDefault();
+      const err = document.getElementById("form-error");
+      err.style.display = "none";
+
+      const title    = document.getElementById("f-title").value.trim();
+      const category = document.getElementById("f-category").value;
+      const status   = document.getElementById("f-status").value;
+      const author   = document.getElementById("f-author").value.trim();
+      const context  = document.getElementById("f-context").value.trim();
+      const decision = document.getElementById("f-decision").value.trim();
+      const rationale= document.getElementById("f-rationale").value.trim();
+      const summary  = document.getElementById("f-summary").value.trim();
+      const applies  = document.getElementById("f-applies").value.trim() || "All forms";
+
+      if (!title || !category || !status || !author || !context || !decision || !rationale) {
+        err.textContent = "Please fill in all required fields (marked *).";
+        err.style.display = "block";
+        err.scrollIntoView({ behavior:"smooth", block:"nearest" });
+        return;
+      }
+
+      const saveBtn = e.target.querySelector('[type="submit"]');
+
+      if (currentEditId) {
+        // ── UPDATE MODE ────────────────────────────────────────
+        const idx = DECISIONS.findIndex(d => d.id === currentEditId);
+        if (idx === -1) return;
+        const orig = DECISIONS[idx];
+        const updated = {
+          ...orig,
+          title, summary: summary || orig.summary,
+          category, status,
+          appliesTo: applies,
+          lastUpdated: todayLabel(),
+          updatedBy: author,
+          context, decision, rationale
+        };
+
+        if (IS_CONFIGURED) {
+          saveBtn.textContent = "Saving…";
+          saveBtn.disabled = true;
+          const { error: dbErr } = await db.from('decisions').update(jsToDb(updated)).eq('id', currentEditId);
+          saveBtn.textContent = "Update decision";
+          saveBtn.disabled = false;
+          if (dbErr) {
+            // Warn but still update locally — most common cause is a missing
+            // UPDATE policy in Supabase RLS. Run this SQL in your Supabase
+            // SQL editor to fix:
+            //   create policy "Allow public update" on decisions
+            //   for update using (true) with check (true);
+            showBanner("⚠ DB update failed — changes saved locally only. Check RLS policy.", "red");
+          } else {
+            showBanner("✓ Decision updated", "green");
+          }
+        }
+
+        DECISIONS[idx] = updated;
+        editedIds.add(currentEditId);
+        const scrollTarget = currentEditId;
+
+        document.getElementById("modal-overlay").style.display = "none";
+        document.body.style.overflow = "";
+        resetModal();
+
+        const activeFilter = document.querySelector(".filter-btn.active");
+        renderSections(activeFilter ? activeFilter.dataset.filter : "all");
+        renderTimeline();
+        renderStats();
+
+        setTimeout(() => {
+          const card = document.getElementById("card-" + scrollTarget);
+          if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+        }, 80);
+
+      } else {
+        // ── INSERT MODE ────────────────────────────────────────
+        const newDecision = {
+          id: nextId(),
+          title, summary: summary || `${title}.`,
+          category, status,
+          appliesTo: applies,
+          lastUpdated: todayLabel(),
+          updatedBy: author,
+          context, decision, rationale,
+          components: null,
+          variations: [],
+          related: []
+        };
+
+        if (IS_CONFIGURED) {
+          saveBtn.textContent = "Saving…";
+          saveBtn.disabled = true;
+          const { error: dbErr } = await db.from('decisions').insert([jsToDb(newDecision)]);
+          saveBtn.textContent = "Save decision";
+          saveBtn.disabled = false;
+          if (dbErr) {
+            err.textContent = "Could not save to database: " + dbErr.message;
+            err.style.display = "block";
+            return;
+          }
+          showBanner("✓ Decision saved to Supabase", "green");
+        }
+
+        DECISIONS.unshift(newDecision);
+
+        document.getElementById("modal-overlay").style.display = "none";
+        document.body.style.overflow = "";
+        resetModal();
+
+        const activeFilter = document.querySelector(".filter-btn.active");
+        renderSections(activeFilter ? activeFilter.dataset.filter : "all");
+        renderTimeline();
+        renderStats();
+
+        setTimeout(() => {
+          const card = document.getElementById("card-" + newDecision.id);
+          if (card) { card.classList.add("open"); card.scrollIntoView({ behavior:"smooth", block:"start" }); }
+        }, 80);
+      }
+    }
+
+    /* ─────────────────────────────────────────
+       EXPORT — CSV / JSON / Markdown
+    ───────────────────────────────────────── */
+    function exportCSV() {
+      const cols = ["id","title","category","status","appliesTo","lastUpdated","updatedBy","summary","context","decision","rationale"];
+      const header = cols.join(",");
+      const escape = v => `"${String(v || "").replace(/"/g,'""')}"`;
+      const rows = DECISIONS.map(d => cols.map(c => escape(d[c])).join(","));
+      const csv = [header, ...rows].join("\r\n");
+      const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "form-decision-log.csv";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function exportJSON() {
+      const json = JSON.stringify(DECISIONS, null, 2);
+      const blob = new Blob([json], { type:"application/json;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "form-decision-log.json";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function exportMarkdown() {
+      const lines = ["# Form decision log — GovTech Barbados\n"];
+      CATEGORY_ORDER.forEach(cat => {
+        const catDecisions = DECISIONS.filter(d => d.category === cat);
+        if (!catDecisions.length) return;
+        lines.push(`\n## ${CATEGORY_LABELS[cat]}\n`);
+        catDecisions.forEach(d => {
+          lines.push(`### ${d.id} — ${d.title}`);
+          lines.push(`**Status:** ${statusLabel(d.status)}  `);
+          lines.push(`**Applies to:** ${d.appliesTo || "—"}  `);
+          lines.push(`**Updated:** ${d.lastUpdated} by ${d.updatedBy}\n`);
+          if (d.summary) lines.push(`> ${d.summary}\n`);
+          lines.push(`**Context:** ${d.context}\n`);
+          lines.push(`**Decision:** ${d.decision}\n`);
+          lines.push(`**Rationale:** ${d.rationale}\n`);
+          lines.push("---\n");
+        });
+      });
+      const md = lines.join("\n");
+      const blob = new Blob([md], { type:"text/markdown;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "form-decision-log.md";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function toggleExportMenu() {
+      const menu = document.getElementById("export-menu");
+      if (!menu) return;
+      menu.style.display = menu.style.display === "none" ? "block" : "none";
+    }
+
+    // Close export menu when clicking outside the button/menu
+    document.addEventListener("click", e => {
+      const menu = document.getElementById("export-menu");
+      const btn  = document.getElementById("export-btn");
+      if (!menu || !btn) return;
+      if (!btn.parentElement.contains(e.target)) {
+        menu.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
