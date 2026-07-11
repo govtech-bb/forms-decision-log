@@ -354,8 +354,8 @@
        Paste your project URL and anon key here.
        Leave as-is to run in offline mode with seed data.
     ═══════════════════════════════════════════════════ */
-    const SUPABASE_URL      = 'https://zijwusnnogcpnewvmivd.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inppand1c25ub2djcG5ld3ZtaXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTIwMDYsImV4cCI6MjA5MTE2ODAwNn0.NsZcqnyP0-UNpz4P1Hk31mKE_vXuNK-GP_86JAzL00Y';
+    const SUPABASE_URL      = 'https://eudedbumobhagxgujkff.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1ZGVkYnVtb2JoYWd4Z3Vqa2ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NjQ5NzYsImV4cCI6MjA5OTM0MDk3Nn0._BPrHpxp85BAIAmAoL2nDjGTxSZyzthF5xGT7VRoUws';
 
     const IS_CONFIGURED = !SUPABASE_URL.startsWith('YOUR_');
     const db = IS_CONFIGURED
@@ -1174,6 +1174,12 @@
         setFilter(btn.dataset.filter);
       });
     });
+
+    // Keepalive — resets Supabase inactivity timer on every page load
+    // so the project never pauses as long as the log is opened occasionally.
+    if (IS_CONFIGURED) {
+      db.from('decisions').select('id', { count: 'exact', head: true }).then(() => {});
+    }
 
     loadDecisions();
 
